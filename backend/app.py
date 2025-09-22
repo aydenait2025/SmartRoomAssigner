@@ -8,12 +8,16 @@ from dotenv import load_dotenv
 import pandas as pd
 import io
 import csv
+import secrets
+# from flask_mail import Mail, Message  # Commented out as it's not currently used
+import requests
+from authlib.integrations.flask_client import OAuth
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_very_secret_key') # Replace with a strong secret key
-CORS(app, supports_credentials=True) # Enable CORS for credentials
+CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://127.0.0.1:3000"]) # Enable CORS for credentials
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:password@db:5432/smartroomassign')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -21,6 +25,35 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.session_protection = "strong" # Protect sessions
+
+# OAuth configuration
+oauth = OAuth(app)
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+
+# mail = Mail(app)  # Commented out as it's not currently used
+
+# Google OAuth
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+# Microsoft/Outlook OAuth
+microsoft = oauth.register(
+    name='microsoft',
+    client_id=os.getenv('MICROSOFT_CLIENT_ID'),
+    client_secret=os.getenv('MICROSOFT_CLIENT_SECRET'),
+    server_metadata_url='https://login.microsoftonline.com/common/v2.0/.well-known/openid_configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -93,6 +126,205 @@ def init_db_route():
             db.session.add(admin_user)
             db.session.commit()
     return "Database initialized and default admin user created!"
+
+@app.route('/seed-buildings')
+@login_required
+def seed_buildings():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # UofT Buildings data - each building will get default rooms
+    uoft_buildings = {
+        'AB': 'Astronomy and Astrophysics',
+        'AP': 'Anthropology Building',
+        'BA': 'Bahen Centre Information Tech',
+        'BF': 'Bancroft Building',
+        'BL': 'Claude T. Bissell Building',
+        'EP': 'Stewart Building',
+        'ES': 'Earth Sciences Centre',
+        'EX': 'Exam Centre',
+        'FE': 'Bloor Street West-371',
+        'GB': 'Galbraith Building',
+        'HA': 'Haultain Building',
+        'HS': 'Health Sciences Building',
+        'IN': 'Innis College',
+        'KP': 'Koffler House',
+        'MB': 'Lassonde Mining Building',
+        'MC': 'Mechanical Engineering Bldg',
+        'MP': 'McLennan Physical Laboratories',
+        'MS': 'Medical Sciences Building',
+        'MY': 'Myhal Centre MCEIE',
+        'NL': 'C David Naylor Building',
+        'OI': 'O.I.S.E.',
+        'PB': 'Leslie Dan Pharmacy Building',
+        'RL': 'Robarts Library Building',
+        'RU': 'Rehabilitation Sciences Bdg',
+        'RW': 'Ramsay Wright Laboratories',
+        'SF': 'Sandford Fleming Building',
+        'SK': 'Social Work, Faculty of',
+        'SS': 'Sidney Smith Hall',
+        'SU': 'Student Commons',
+        'TC': 'Trinity College',
+        'UC': 'University College',
+        'WB': 'Wallberg Building',
+        'WE': 'Wetmore Hall-New College',
+        'WI': 'Wilson Hall-New College',
+        'WO': 'Woodsworth College Residence',
+        'WW': 'Woodsworth College'
+    }
+
+    with app.app_context():
+        rooms_added = 0
+        buildings_created = {}
+
+        for code, full_name in uoft_buildings.items():
+            building_name = f"{code} - {full_name}"
+
+            # Create multiple rooms per building (3-6 rooms per building)
+            num_rooms = 3 if len(uoft_buildings) > 20 else 4  # Vary room count
+
+            buildings_created[building_name] = []
+
+            for room_num in range(1, num_rooms + 1):
+                # Use building code + room number
+                room_number = "255"  # Default room number, can be updated
+                room_capacity = 30  # Default capacity
+                testing_capacity = room_capacity * 2  # Testing capacity
+
+                room = Room(
+                    building_name=building_name,
+                    room_number=str(room_num).zfill(3),
+                    room_capacity=room_capacity,
+                    testing_capacity=testing_capacity,
+                    allowed=True
+                )
+
+                buildings_created[building_name].append({
+                    "room_number": room.room_number,
+                    "capacity": room.room_capacity,
+                    "testing_capacity": room.testing_capacity
+                })
+
+                db.session.add(room)
+                rooms_added += 1
+
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Successfully added {len(uoft_buildings)} buildings with {rooms_added} total rooms",
+            "buildings_created": buildings_created
+        }), 200
+
+@app.route('/import-buildings', methods=['POST'])
+@login_required
+def import_buildings():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    if not (file.filename.endswith('.csv') or file.filename.endswith('.txt')):
+        return jsonify({"error": "Invalid file type. Please upload a CSV or text file."}), 400
+
+    data = file.read().decode('utf-8')
+
+    try:
+        # Try different delimiters: comma, space, tab
+        df = None
+        for delimiter in [',', ' ', '\t']:
+            try:
+                test_df = pd.read_csv(io.StringIO(data), sep=delimiter, on_bad_lines='skip')
+                if len(test_df.columns) >= 2:
+                    df = test_df
+                    break
+            except:
+                continue
+
+        if df is None:
+            # Fallback to comma if other delimiters don't work
+            df = pd.read_csv(io.StringIO(data), sep=',', on_bad_lines='skip')
+
+        # Check if we have building codes (2-3 character codes) or just building names
+        has_building_codes = False
+        if len(df.columns) >= 2:
+            # Check if first column looks like building codes (2-3 characters, alphanumeric)
+            first_col = df.columns[0].strip()
+            sample_values = df.iloc[:3, 0].astype(str).str.strip()
+            if all(len(val) <= 3 and val.replace(' ', '').isalnum() for val in sample_values if val):
+                has_building_codes = True
+
+        # Also check for explicit column names (case-insensitive)
+        column_names = [col.strip().lower() for col in df.columns]
+        if 'building code' in column_names and 'building name' in column_names:
+            has_building_codes = True
+
+        imported_count = 0
+        skipped_count = 0
+        rooms_added = 0
+
+        with app.app_context():
+            for index, row in df.iterrows():
+                if has_building_codes:
+                    # Format: Code and Building Name
+                    building_code = str(row.iloc[0]).strip()
+                    building_full_name = str(row.iloc[1]).strip()
+                    building_name = f"{building_code} - {building_full_name}"
+                else:
+                    # Format: Just Building Name (original logic)
+                    building_full_name = str(row.iloc[0]).strip()
+
+                    # Generate building code from building_full_name
+                    words = building_full_name.split()
+                    building_code = "".join([word[0].upper() for word in words if word]).strip()
+
+                    # If the generated code is empty or too short, use a substring or default
+                    if not building_code:
+                        building_code = building_full_name[:3].upper() if len(building_full_name) >= 3 else building_full_name.upper()
+
+                    # Ensure building_code is not too long for display
+                    if len(building_code) > 10:
+                        building_code = building_code[:10]
+
+                    building_name = f"{building_code} - {building_full_name}"
+
+                # Check if building already exists (by checking if any room exists for this building_name)
+                existing_room = Room.query.filter_by(building_name=building_name).first()
+                if existing_room:
+                    skipped_count += 1
+                    continue # Skip if building already exists
+
+                # If new building, add it and its default rooms
+                num_rooms = 3 # Fixed number of rooms for uploaded buildings
+                room_capacity = 30
+                testing_capacity = room_capacity * 2
+
+                for room_num in range(1, num_rooms + 1):
+                    room = Room(
+                        building_name=building_name,
+                        room_number=str(room_num).zfill(3),
+                        room_capacity=room_capacity,
+                        testing_capacity=testing_capacity,
+                        allowed=True
+                    )
+                    db.session.add(room)
+                    rooms_added += 1
+                imported_count += 1
+            db.session.commit()
+
+        return jsonify({
+            "message": f"Import complete. Added {imported_count} new buildings and {rooms_added} rooms. Skipped {skipped_count} existing buildings.",
+            "imported_buildings": imported_count,
+            "skipped_buildings": skipped_count,
+            "format_detected": "building_codes" if has_building_codes else "building_names_only"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -463,18 +695,28 @@ def get_rooms():
     if current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
     with app.app_context():
-        rooms = Room.query.all()
-        return jsonify([
-            {
-                "id": room.id,
-                "building_name": room.building_name,
-                "room_number": room.room_number,
-                "room_capacity": room.room_capacity,
-                "testing_capacity": room.testing_capacity,
-                "allowed": room.allowed
-            } for room in rooms
-        ]), 200
+        pagination = Room.query.paginate(page=page, per_page=per_page, error_out=False)
+        rooms = pagination.items
+        
+        return jsonify({
+            "rooms": [
+                {
+                    "id": room.id,
+                    "building_name": room.building_name,
+                    "room_number": room.room_number,
+                    "room_capacity": room.room_capacity,
+                    "testing_capacity": room.testing_capacity,
+                    "allowed": room.allowed
+                } for room in rooms
+            ],
+            "total_pages": pagination.pages,
+            "current_page": pagination.page,
+            "total_items": pagination.total
+        }), 200
 
 @app.route('/students', methods=['GET'])
 @login_required
@@ -482,17 +724,27 @@ def get_students():
     if current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
     with app.app_context():
-        students = Student.query.all()
-        return jsonify([
-            {
-                "id": student.id,
-                "first_name": student.first_name,
-                "last_name": student.last_name,
-                "student_number": student.student_number,
-                "student_id": student.student_id
-            } for student in students
-        ]), 200
+        pagination = Student.query.paginate(page=page, per_page=per_page, error_out=False)
+        students = pagination.items
+        
+        return jsonify({
+            "students": [
+                {
+                    "id": student.id,
+                    "first_name": student.first_name,
+                    "last_name": student.last_name,
+                    "student_number": student.student_number,
+                    "student_id": student.student_id
+                } for student in students
+            ],
+            "total_pages": pagination.pages,
+            "current_page": pagination.page,
+            "total_items": pagination.total
+        }), 200
 
 @app.route('/assignments', methods=['GET'])
 @login_required
@@ -500,11 +752,15 @@ def get_assignments():
     if current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
     with app.app_context():
-        assignments = db.session.query(Assignment, Student, Room).join(Student).join(Room).all()
+        pagination = db.session.query(Assignment, Student, Room).join(Student).join(Room).paginate(page=page, per_page=per_page, error_out=False)
+        assignments_data = pagination.items
         
         results = []
-        for assignment, student, room in assignments:
+        for assignment, student, room in assignments_data:
             results.append({
                 "assignment_id": assignment.id,
                 "student_name": f"{student.first_name} {student.last_name}",
@@ -515,7 +771,322 @@ def get_assignments():
                 "course": assignment.course,
                 "exam_date": assignment.exam_date
             })
-        return jsonify(results), 200
+        return jsonify({
+            "assignments": results,
+            "total_pages": pagination.pages,
+            "current_page": pagination.page,
+            "total_items": pagination.total
+        }), 200
+
+@app.route('/buildings', methods=['GET'])
+@login_required
+def get_buildings():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    with app.app_context():
+        # Group rooms by building
+        rooms = Room.query.all()
+        buildings_dict = {}
+
+        for room in rooms:
+            building_name = room.building_name
+            if building_name not in buildings_dict:
+                buildings_dict[building_name] = {
+                    "building_name": building_name,
+                    "total_rooms": 0,
+                    "total_capacity": 0,
+                    "total_testing_capacity": 0,
+                    "available_rooms": 0,
+                    "rooms": []
+                }
+
+            buildings_dict[building_name]["rooms"].append({
+                "id": room.id,
+                "room_number": room.room_number,
+                "room_capacity": room.room_capacity,
+                "testing_capacity": room.testing_capacity,
+                "allowed": room.allowed
+            })
+
+            buildings_dict[building_name]["total_rooms"] += 1
+            buildings_dict[building_name]["total_capacity"] += room.room_capacity
+            buildings_dict[building_name]["total_testing_capacity"] += room.testing_capacity
+            if room.allowed:
+                buildings_dict[building_name]["available_rooms"] += 1
+
+        buildings_list = list(buildings_dict.values())
+
+        # Sort by building name
+        buildings_list.sort(key=lambda x: x["building_name"])
+
+        # Manual pagination for the list of buildings
+        start = (page - 1) * per_page
+        end = start + per_page
+        paginated_buildings = buildings_list[start:end]
+
+        total_items = len(buildings_list)
+        total_pages = (total_items + per_page - 1) // per_page
+
+        return jsonify({
+            "buildings": paginated_buildings,
+            "total_pages": total_pages,
+            "current_page": page,
+            "total_items": total_items
+        }), 200
+
+# CRUD operations for rooms
+@app.route('/rooms', methods=['POST'])
+@login_required
+def create_room():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        with app.app_context():
+            room = Room(
+                building_name=data['building_name'],
+                room_number=data['room_number'],
+                room_capacity=data['room_capacity'],
+                testing_capacity=data.get('testing_capacity', data['room_capacity'] * 2),
+                allowed=data.get('allowed', True)
+            )
+            db.session.add(room)
+            db.session.commit()
+
+            return jsonify({
+                "id": room.id,
+                "building_name": room.building_name,
+                "room_number": room.room_number,
+                "room_capacity": room.room_capacity,
+                "testing_capacity": room.testing_capacity,
+                "allowed": room.allowed,
+                "message": "Room created successfully"
+            }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/rooms/<int:room_id>', methods=['PUT'])
+@login_required
+def update_room(room_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        with app.app_context():
+            room = Room.query.get_or_404(room_id)
+
+            room.building_name = data.get('building_name', room.building_name)
+            room.room_number = data.get('room_number', room.room_number)
+            room.room_capacity = data.get('room_capacity', room.room_capacity)
+            room.testing_capacity = data.get('testing_capacity', room.testing_capacity)
+            room.allowed = data.get('allowed', room.allowed)
+
+            db.session.commit()
+
+            return jsonify({
+                "id": room.id,
+                "building_name": room.building_name,
+                "room_number": room.room_number,
+                "room_capacity": room.room_capacity,
+                "testing_capacity": room.testing_capacity,
+                "allowed": room.allowed,
+                "message": "Room updated successfully"
+            }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/rooms/<int:room_id>', methods=['DELETE'])
+@login_required
+def delete_room(room_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        with app.app_context():
+            room = Room.query.get_or_404(room_id)
+            db.session.delete(room)
+            db.session.commit()
+
+            return jsonify({"message": "Room deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# CRUD operations for students
+@app.route('/students', methods=['POST'])
+@login_required
+def create_student():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        with app.app_context():
+            student = Student(
+                first_name=data['first_name'],
+                last_name=data['last_name'],
+                student_number=data['student_number'],
+                student_id=data['student_id']
+            )
+            db.session.add(student)
+            db.session.commit()
+
+            return jsonify({
+                "id": student.id,
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+                "student_number": student.student_number,
+                "student_id": student.student_id,
+                "message": "Student created successfully"
+            }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/students/<int:student_id>', methods=['PUT'])
+@login_required
+def update_student(student_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        with app.app_context():
+            student = Student.query.get_or_404(student_id)
+
+            student.first_name = data.get('first_name', student.first_name)
+            student.last_name = data.get('last_name', student.last_name)
+            student.student_number = data.get('student_number', student.student_number)
+            student.student_id = data.get('student_id', student.student_id)
+
+            db.session.commit()
+
+            return jsonify({
+                "id": student.id,
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+                "student_number": student.student_number,
+                "student_id": student.student_id,
+                "message": "Student updated successfully"
+            }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/students/<int:student_id>', methods=['DELETE'])
+@login_required
+def delete_student(student_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        with app.app_context():
+            student = Student.query.get_or_404(student_id)
+            db.session.delete(student)
+            db.session.commit()
+
+            return jsonify({"message": "Student deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# OAuth and Forgot Password Routes
+
+@app.route('/auth/google')
+def google_login():
+    redirect_uri = 'http://localhost:5000/auth/google/callback'
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_callback():
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('https://www.googleapis.com/oauth2/v2/userinfo')
+        user_info = resp.json()
+
+        # Create or get user based on Google email
+        with app.app_context():
+            user = User.query.filter_by(username=user_info['email']).first()
+            if not user:
+                user = User(username=user_info['email'], role='student')
+                user.set_password(secrets.token_hex(16))  # Random password for OAuth users
+                db.session.add(user)
+                db.session.commit()
+
+            login_user(user)
+            return jsonify({"message": "Logged in successfully", "user": {"id": user.id, "username": user.username, "role": user.role}}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/auth/outlook')
+def outlook_login():
+    redirect_uri = 'http://localhost:5000/auth/outlook/callback'
+    return microsoft.authorize_redirect(redirect_uri)
+
+@app.route('/auth/outlook/callback')
+def outlook_callback():
+    try:
+        token = microsoft.authorize_access_token()
+        resp = microsoft.get('https://graph.microsoft.com/v1.0/me')
+        user_info = resp.json()
+
+        # Create or get user based on Outlook email
+        with app.app_context():
+            user = User.query.filter_by(username=user_info['mail']).first()
+            if not user:
+                user = User(username=user_info['mail'], role='student')
+                user.set_password(secrets.token_hex(16))  # Random password for OAuth users
+                db.session.add(user)
+                db.session.commit()
+
+            login_user(user)
+            return jsonify({"message": "Logged in successfully", "user": {"id": user.id, "username": user.username, "role": user.role}}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        # For demo purposes, we'll just log the request
+        # In a real implementation, you'd send an email with a reset token
+        app.logger.info(f"Password reset requested for email: {email}")
+
+        # TODO: Implement actual password reset flow with:
+        # 1. Generate reset token with expiration
+        # 2. Store token in database
+        # 3. Send email with reset link
+        # 4. Create reset password endpoint
+
+        return jsonify({"message": "Password reset email sent. Please check your email. (Demo implementation)"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

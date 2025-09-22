@@ -5,17 +5,24 @@ import RoomManagement from './components/admin/RoomManagement';
 import StudentManagement from './components/admin/StudentManagement';
 import AssignmentTab from './components/admin/AssignmentTab';
 import Reports from './components/admin/Reports';
+import BuildingView from './components/admin/BuildingView';
 import StudentDashboard from './components/student/StudentDashboard';
+
+axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.withCredentials = true;
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeAdminTab, setActiveAdminTab] = useState('rooms'); // 'rooms', 'students', 'assignment', 'reports'
+  const [activeAdminTab, setActiveAdminTab] = useState(() => {
+    // Get saved tab from localStorage, default to 'rooms'
+    return localStorage.getItem('activeAdminTab') || 'rooms';
+  }); // 'rooms', 'students', 'assignment', 'reports', 'buildings'
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/current_user', { withCredentials: true });
+        const response = await axios.get('/current_user');
         setLoggedInUser(response.data);
       } catch (error) {
         setLoggedInUser(null);
@@ -26,12 +33,22 @@ function App() {
     fetchUser();
   }, []);
 
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('activeAdminTab', activeAdminTab);
+  }, [activeAdminTab]);
+
   const handleLogout = async () => {
     try {
-      await axios.get('http://localhost:5000/logout', { withCredentials: true });
+      await axios.get('/logout');
       setLoggedInUser(null);
+      // Force a page reload to clear any cached state
+      window.location.reload();
     } catch (error) {
       console.error('Logout failed:', error);
+      // Even if logout fails, clear local state and reload
+      setLoggedInUser(null);
+      window.location.reload();
     }
   };
 
@@ -65,12 +82,22 @@ function App() {
               <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="admin-tabs" role="tablist">
                 <li className="mr-2" role="presentation">
                   <button
+                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'buildings' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
+                    onClick={() => setActiveAdminTab('buildings')}
+                    type="button"
+                    role="tab"
+                  >
+                    🏢 Building Management
+                  </button>
+                </li>
+                <li className="mr-2" role="presentation">
+                  <button
                     className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'rooms' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
                     onClick={() => setActiveAdminTab('rooms')}
                     type="button"
                     role="tab"
                   >
-                    Room Management
+                    🚪 Room Management
                   </button>
                 </li>
                 <li className="mr-2" role="presentation">
@@ -80,7 +107,7 @@ function App() {
                     type="button"
                     role="tab"
                   >
-                    Student Management
+                    👥 Student Management
                   </button>
                 </li>
                 <li className="mr-2" role="presentation">
@@ -90,7 +117,7 @@ function App() {
                     type="button"
                     role="tab"
                   >
-                    Assignment
+                    📋 Assign Students
                   </button>
                 </li>
                 <li role="presentation">
@@ -100,7 +127,7 @@ function App() {
                     type="button"
                     role="tab"
                   >
-                    Reports
+                    📊 Reports & Analytics
                   </button>
                 </li>
               </ul>
@@ -110,6 +137,7 @@ function App() {
               {activeAdminTab === 'students' && <StudentManagement />}
               {activeAdminTab === 'assignment' && <AssignmentTab />}
               {activeAdminTab === 'reports' && <Reports />}
+              {activeAdminTab === 'buildings' && <BuildingView />}
             </div>
           </div>
         )}

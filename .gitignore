@@ -1,0 +1,21 @@
+# Dependencies
+/node_modules
+/backend/venv
+/backend/__pycache__
+
+# Build artifacts
+/frontend/build
+/frontend/dist
+.parcel-cache
+
+# Environment variables
+.env
+.env*.local
+
+# IDE configuration
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
