@@ -116,6 +116,47 @@ SmartRoomAssigner/
 
 This script only reads publicly available information from the UofT room booking website. It does not perform any write operations or access any private data.
 
+## Room Data Scraper
+
+In addition to building data, you can also scrape detailed room information for each building using the companion script `scrape_rooms.py`.
+
+### Features
+
+- **Automated Room Collection**: Scrapes room details for all buildings in your `buildings.csv`
+- **Capacity Information**: Extracts both room capacity and testing capacity for each room
+- **Comprehensive Data**: Collects building code, room name, and capacity information
+- **CSV Output**: Generates `rooms.csv` with headers for easy import
+
+### Usage
+
+**Prerequisites**: First run the building scraper to generate `buildings.csv`
+
+```bash
+# 1. Run building scraper first
+python scrape_buildings.py
+
+# 2. Run room scraper
+python scrape_rooms.py
+```
+
+**Output Format** (`rooms.csv`):
+```csv
+Building,Room,Room Capacity,Testing Capacity
+AB,Room 101,30,60
+AB,Room 102,25,50
+BA,Room 201,40,80
+...
+```
+
+### Integration with SmartRoomAssigner
+
+The generated `rooms.csv` file can be imported into the Room Management system:
+
+1. Go to Room Management tab in the admin interface
+2. Use the "Add New Room" functionality or create a custom import
+3. The room data includes building codes, room numbers, and capacity information
+4. Perfect for bulk room data population
+
 ## Support
 
 If you encounter issues:
@@ -123,3 +164,4 @@ If you encounter issues:
 2. Verify your internet connection
 3. Ensure the UofT website is accessible
 4. Check the console output for specific error messages
+5. Make sure `buildings.csv` exists before running the room scraper
