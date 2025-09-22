@@ -93,22 +93,22 @@ function App() {
                 </li>
                 <li className="mr-2" role="presentation">
                   <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'courses' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('courses')}
-                    type="button"
-                    role="tab"
-                  >
-                    📚 Course Management
-                  </button>
-                </li>
-                <li className="mr-2" role="presentation">
-                  <button
                     className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'rooms' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
                     onClick={() => setActiveAdminTab('rooms')}
                     type="button"
                     role="tab"
                   >
                     🚪 Room Management
+                  </button>
+                </li>
+                <li className="mr-2" role="presentation">
+                  <button
+                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'courses' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
+                    onClick={() => setActiveAdminTab('courses')}
+                    type="button"
+                    role="tab"
+                  >
+                    📚 Course Management
                   </button>
                 </li>
                 <li className="mr-2" role="presentation">
