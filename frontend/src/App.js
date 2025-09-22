@@ -7,6 +7,7 @@ import AssignmentTab from './components/admin/AssignmentTab';
 import Reports from './components/admin/Reports';
 import BuildingView from './components/admin/BuildingView';
 import CourseManagement from './components/admin/CourseManagement';
+import BuildingLocator from './components/admin/BuildingLocator';
 import StudentDashboard from './components/student/StudentDashboard';
 
 axios.defaults.baseURL = 'http://localhost:5000';
@@ -141,6 +142,16 @@ function App() {
                     📊 Reports & Analytics
                   </button>
                 </li>
+                <li role="presentation">
+                  <button
+                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'locator' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
+                    onClick={() => setActiveAdminTab('locator')}
+                    type="button"
+                    role="tab"
+                  >
+                    🗺️ Building Locator
+                  </button>
+                </li>
               </ul>
             </div>
             <div id="admin-tab-content">
@@ -150,6 +161,7 @@ function App() {
               {activeAdminTab === 'reports' && <Reports />}
               {activeAdminTab === 'buildings' && <BuildingView />}
               {activeAdminTab === 'courses' && <CourseManagement />}
+              {activeAdminTab === 'locator' && <BuildingLocator />}
             </div>
           </div>
         )}
