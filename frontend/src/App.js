@@ -1,175 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
+import StudentDashboard from './components/student/StudentDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
 import RoomManagement from './components/admin/RoomManagement';
 import StudentManagement from './components/admin/StudentManagement';
-import AssignmentTab from './components/admin/AssignmentTab';
-import Reports from './components/admin/Reports';
-import BuildingView from './components/admin/BuildingView';
 import CourseManagement from './components/admin/CourseManagement';
+import AssignmentTab from './components/admin/AssignmentTab';
 import BuildingLocator from './components/admin/BuildingLocator';
-import StudentDashboard from './components/student/StudentDashboard';
-
-axios.defaults.baseURL = 'http://localhost:5000';
-axios.defaults.withCredentials = true;
+import ScheduleManagement from './components/admin/ScheduleManagement';
+import Reports from './components/admin/Reports';
 
 function App() {
-  const [loggedInUser, setLoggedInUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeAdminTab, setActiveAdminTab] = useState(() => {
-    // Get saved tab from localStorage, default to 'rooms'
-    return localStorage.getItem('activeAdminTab') || 'rooms';
-  }); // 'rooms', 'students', 'assignment', 'reports', 'buildings'
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get('/current_user');
-        setLoggedInUser(response.data);
-      } catch (error) {
-        setLoggedInUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  // Save active tab to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('activeAdminTab', activeAdminTab);
-  }, [activeAdminTab]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.get('/logout');
-      setLoggedInUser(null);
-      // Force a page reload to clear any cached state
-      window.location.reload();
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Even if logout fails, clear local state and reload
-      setLoggedInUser(null);
-      window.location.reload();
-    }
+  // This is a placeholder for authentication logic.
+  // In a real application, you would check for a token or user session.
+  const isAuthenticated = () => {
+    // Temporarily return true for testing the admin dashboard
+    return true;
+    // return localStorage.getItem('token') !== null;
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-xl">Loading...</div>;
-  }
+  const isAdmin = () => {
+    // Temporarily return true for testing the admin dashboard
+    return true;
+    // return localStorage.getItem('userRole') === 'admin';
+  };
 
-  if (!loggedInUser) {
-    return <Login setLoggedInUser={setLoggedInUser} />;
-  }
+  const isStudent = () => {
+    return localStorage.getItem('userRole') === 'student';
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-blue-600 p-4 text-white flex justify-between items-center">
-        <h1 className="text-xl font-bold">SmartRoomAssign</h1>
-        <div>
-          <span>Welcome, {loggedInUser.username} ({loggedInUser.role})</span>
-          <button onClick={handleLogout} className="ml-4 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
-            Logout
-          </button>
-        </div>
-      </nav>
-      <main className="p-4">
-        <h2 className="text-2xl font-bold mb-4">
-          {loggedInUser.role === 'admin' ? 'Admin Dashboard' : 'Student Portal'}
-        </h2>
-        
-        {loggedInUser.role === 'admin' && (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="mb-4 border-b border-gray-200">
-              <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="admin-tabs" role="tablist">
-                <li className="mr-2" role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'buildings' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('buildings')}
-                    type="button"
-                    role="tab"
-                  >
-                    🏢 Building Management
-                  </button>
-                </li>
-                <li className="mr-2" role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'rooms' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('rooms')}
-                    type="button"
-                    role="tab"
-                  >
-                    🚪 Room Management
-                  </button>
-                </li>
-                <li className="mr-2" role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'courses' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('courses')}
-                    type="button"
-                    role="tab"
-                  >
-                    📚 Course Management
-                  </button>
-                </li>
-                <li className="mr-2" role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'students' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('students')}
-                    type="button"
-                    role="tab"
-                  >
-                    👥 Student Management
-                  </button>
-                </li>
-                <li className="mr-2" role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'assignment' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('assignment')}
-                    type="button"
-                    role="tab"
-                  >
-                    📋 Assign Students
-                  </button>
-                </li>
-                <li role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'reports' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('reports')}
-                    type="button"
-                    role="tab"
-                  >
-                    📊 Reports & Analytics
-                  </button>
-                </li>
-                <li role="presentation">
-                  <button
-                    className={`inline-block p-4 border-b-2 rounded-t-lg ${activeAdminTab === 'locator' ? 'text-blue-600 border-blue-600' : 'hover:text-gray-600 hover:border-gray-300'}`}
-                    onClick={() => setActiveAdminTab('locator')}
-                    type="button"
-                    role="tab"
-                  >
-                    🗺️ Building Locator
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div id="admin-tab-content">
-              {activeAdminTab === 'rooms' && <RoomManagement />}
-              {activeAdminTab === 'students' && <StudentManagement />}
-              {activeAdminTab === 'assignment' && <AssignmentTab />}
-              {activeAdminTab === 'reports' && <Reports />}
-              {activeAdminTab === 'buildings' && <BuildingView />}
-              {activeAdminTab === 'courses' && <CourseManagement />}
-              {activeAdminTab === 'locator' && <BuildingLocator />}
-            </div>
-          </div>
-        )}
-        {loggedInUser.role === 'student' && (
-          <StudentDashboard />
-        )}
-      </main>
-    </div>
+    <Router>
+      <div className="min-h-screen bg-gray-900 text-gray-100"> {/* Apply dark theme here */}
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          {/* Student Routes */}
+          <Route 
+            path="/student/dashboard" 
+            element={isStudent() ? <StudentDashboard /> : <Navigate to="/login" />} 
+          />
+
+          {/* Admin Routes */}
+          <Route 
+            path="/admin/dashboard" 
+            element={isAdmin() ? <AdminDashboard /> : <Navigate to="/login" replace />} 
+          />
+          <Route 
+            path="/admin/room-management" 
+            element={isAdmin() ? <RoomManagement /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/admin/student-management" 
+            element={isAdmin() ? <StudentManagement /> : <Navigate to="/login" />} 
+          />
+          <Route
+            path="/admin/course-management"
+            element={isAdmin() ? <CourseManagement /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/schedule-management"
+            element={isAdmin() ? <ScheduleManagement /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/assignment-tab"
+            element={isAdmin() ? <AssignmentTab /> : <Navigate to="/login" />}
+          />
+          <Route 
+            path="/admin/building-locator" 
+            element={isAdmin() ? <BuildingLocator /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/admin/reports" 
+            element={isAdmin() ? <Reports /> : <Navigate to="/login" />} 
+          />
+
+          {/* Default Route */}
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated() ? (
+                isAdmin() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/student/dashboard" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
