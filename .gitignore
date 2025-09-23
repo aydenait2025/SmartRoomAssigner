@@ -12,6 +12,12 @@
 .env
 .env*.local
 
+# Sensitive authentication data (NEVER COMMIT)
+cookies/
+*cookies*.txt
+*cookie*.txt
+session.txt
+
 # IDE configuration
 .vscode/
 .idea/
