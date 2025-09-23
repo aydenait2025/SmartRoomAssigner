@@ -7,10 +7,19 @@ services:
       POSTGRES_DB: smartroomassign
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+      # Optional: Initialize with enterprise schema
+      # POSTGRES_DB_SCHEMA: /docker-entrypoint-initdb.d/enterprise_schema.sql
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+      # Optional: Uncomment to auto-initialize with enterprise schema
+      # - ./db/ultimate_enterprise_schema.sql:/docker-entrypoint-initdb.d/01-enterprise-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d smartroomassign"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -19,24 +28,62 @@ services:
     environment:
       FLASK_ENV: development
       DATABASE_URL: postgresql://user:password@db:5432/smartroomassign
+      PYTHONPATH: /app
+      # Add new data paths for configuration
+      DATA_RAW_DIR: /app/data/raw
+      DATA_PROCESSED_DIR: /app/data/processed
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./backend:/app
+      # Mount data directories for file operations if needed
+      - ./data:/app/data:ro  # Read-only mount for data files
+      - ./cookies:/app/cookies:ro  # Read-only mount for session files
+    networks:
+      - smartroomassign
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
+      - REACT_APP_API_URL=http://localhost:5000
       - REACT_APP_GOOGLE_MAPS_API_KEY=${REACT_APP_GOOGLE_MAPS_API_KEY}
+      - NODE_ENV=development
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      # Exclude certain directories to improve performance
+      - ./.vscode-cache:/app/.cache:rw
     stdin_open: true
     tty: true
+    networks:
+      - smartroomassign
+
+  # Optional: Add a data preprocessing service
+  # data-processor:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.data
+  #   environment:
+  #     - PYTHONPATH=/app
+  #   volumes:
+  #     - ./data:/app/data
+  #     - ./utils:/app/utils
+  #     - ./cookies:/app/cookies:ro
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - smartroomassign
+  #   command: python utils/scrape_buildings.py
 
 volumes:
   db_data:
+    driver: local
+
+networks:
+  smartroomassign:
+    driver: bridge

@@ -12,6 +12,12 @@ function StudentManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [assignmentStats, setAssignmentStats] = useState({
+    total: 0,
+    assigned: 0,
+    unassigned: 0,
+    percentage: 0
+  });
   const perPage = 10;
 
   // Search and filter states
@@ -29,7 +35,9 @@ function StudentManagement() {
     first_name: '',
     last_name: '',
     student_number: '',
-    student_id: ''
+    student_id: '',
+    department: '',
+    courses: ''
   });
 
   // Bulk import states
@@ -67,7 +75,7 @@ function StudentManagement() {
       const response = await axios.post('/students', newStudent, { withCredentials: true });
       successToast('Student added successfully!', 3000);
       setShowAddModal(false);
-      setNewStudent({ first_name: '', last_name: '', student_number: '', student_id: '' });
+      setNewStudent({ first_name: '', last_name: '', student_number: '', student_id: '', department: '', courses: '' });
       fetchStudents();
     } catch (err) {
       errorToast(err.response?.data?.error || 'Failed to add student');
@@ -197,7 +205,27 @@ function StudentManagement() {
             ➕ Add New Student
           </button>
         <button
-          onClick={() => {/* TODO: Export functionality */}}
+          onClick={() => {
+            const csvContent = [
+              // CSV header
+              'Student ID,Name,Department,Courses Enrolled,Assignment Status',
+              // CSV data rows
+              ...filteredStudents.map(student =>
+                `"${student.student_id}","${student.first_name} ${student.last_name}","${student.department || 'Not Assigned'}","${student.courses || 'No courses enrolled'}","${student.assignment ? 'Assigned' : 'Unassigned'}"`
+              )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `students_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            successToast('Student data exported successfully!', 3000);
+          }}
           className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
         >
           📊 Export Data
@@ -207,24 +235,92 @@ function StudentManagement() {
       {message && <p className="text-green-500 mb-4">{message}</p>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Summary Stats */}
-      <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+      {/* Assignment Completion Visualization */}
+      <div className="mb-6 bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Assignment Completion Dashboard</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Progress Circle */}
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <svg className="transform -rotate-90 w-32 h-32" viewBox="0 0 120 120">
+                {/* Background circle */}
+                <circle
+                  cx="60" cy="60" r="54"
+                  stroke="#e5e7eb"
+                  strokeWidth="8"
+                  fill="transparent"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="60" cy="60" r="54"
+                  stroke="#3b82f6"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 54}`}
+                  strokeDashoffset={`${2 * Math.PI * 54 * (1 - (students.filter(s => s.assignment).length / students.length || 0))}`}
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900">
+                    {students.length > 0 ? Math.round((students.filter(s => s.assignment).length / students.length) * 100) : 0}%
+                  </div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bar Chart */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 bg-gray-200 rounded-full h-4">
+                <div
+                  className="bg-green-500 h-4 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${students.length > 0 ? (students.filter(s => s.assignment).length / students.length) * 100 : 0}%` }}
+                ></div>
+              </div>
+              <div className="text-lg font-semibold text-green-600">
+                {students.filter(s => s.assignment).length}
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 bg-gray-200 rounded-full h-4">
+                <div
+                  className="bg-yellow-500 h-4 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${students.length > 0 ? (students.filter(s => !s.assignment).length / students.length) * 100 : 0}%` }}
+                ></div>
+              </div>
+              <div className="text-lg font-semibold text-yellow-600">
+                {students.filter(s => !s.assignment).length}
+              </div>
+            </div>
+            <div className="flex justify-between text-sm text-gray-600 mt-2">
+              <span>Assigned</span>
+              <span>Unassigned</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-gray-200">
+          <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{totalItems}</div>
             <div className="text-sm text-gray-600">Total Students</div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+          <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{students.filter(s => s.assignment).length}</div>
-            <div className="text-sm text-gray-600">Assigned Students</div>
+            <div className="text-sm text-gray-600">Assigned</div>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+          <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">{students.filter(s => !s.assignment).length}</div>
-            <div className="text-sm text-gray-600">Unassigned Students</div>
+            <div className="text-sm text-gray-600">Unassigned</div>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{students.length > 0 ? Math.round((students.filter(s => s.assignment).length / students.length) * 100) : 0}%</div>
-            <div className="text-sm text-gray-600">Assignment Rate</div>
+            <div className="text-sm text-gray-600">Completion Rate</div>
           </div>
         </div>
       </div>
@@ -300,56 +396,78 @@ function StudentManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Student Number</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Student ID</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Seating Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Courses Enrolled</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assignment Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student, index) => (
-                  <tr key={student.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {student.first_name} {student.last_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full text-center">
-                        {student.student_number}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-blue-100 px-3 py-1 rounded-full text-center font-mono">
-                        {student.student_id}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        student.assignment ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {student.assignment ? '✅ Assigned' : '⏳ Unassigned'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openEditModal(student)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600"
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                        >
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filteredStudents.map((student, index) => {
+                  // Calculate assignment status highlight
+                  const hasIncompleteAssignment = !student.assignment;
+                  const recentAssignment = student.recently_assigned; // This would be from the API
+
+                  return (
+                    <tr key={student.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors ${
+                      hasIncompleteAssignment ? 'border-l-4 border-yellow-400' : ''
+                    }`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm font-medium ${recentAssignment ? 'text-green-600 font-semibold' : 'text-gray-900'}`}>
+                          {student.student_id}
+                          {recentAssignment && <span className="ml-2 text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">New</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {student.first_name} {student.last_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700 bg-purple-50 px-2 py-1 rounded">
+                          {student.department || 'Not Assigned'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700 max-w-xs truncate" title={student.courses || 'No courses enrolled'}>
+                          {student.courses || 'No courses enrolled'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          student.assignment ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                        }`}>
+                          {student.assignment ? '✅ Assigned' : '⏳ Unassigned'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => openEditModal(student)}
+                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors duration-200"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => {/* TODO: Export individual student */}}
+                            title="Export"
+                            className="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+                          >
+                            📊
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudent(student.id)}
+                            className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors duration-200"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -425,6 +543,26 @@ function StudentManagement() {
                   placeholder="e.g., student@university.edu"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <input
+                  type="text"
+                  value={newStudent.department}
+                  onChange={(e) => setNewStudent({...newStudent, department: e.target.value})}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200 text-sm"
+                  placeholder="e.g., Computer Science"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Courses Enrolled</label>
+                <input
+                  type="text"
+                  value={newStudent.courses}
+                  onChange={(e) => setNewStudent({...newStudent, courses: e.target.value})}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200 text-sm"
+                  placeholder="e.g., CS301,MATH201,PHYS101"
+                />
+              </div>
             </div>
             <div className="flex justify-end space-x-2 mt-6">
               <button
@@ -483,6 +621,24 @@ function StudentManagement() {
                   type="text"
                   value={editingStudent.student_id}
                   onChange={(e) => setEditingStudent({...editingStudent, student_id: e.target.value})}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <input
+                  type="text"
+                  value={editingStudent.department || ''}
+                  onChange={(e) => setEditingStudent({...editingStudent, department: e.target.value})}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Courses Enrolled</label>
+                <input
+                  type="text"
+                  value={editingStudent.courses || ''}
+                  onChange={(e) => setEditingStudent({...editingStudent, courses: e.target.value})}
                   className="w-full h-10 px-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200 text-sm"
                 />
               </div>
@@ -607,29 +763,83 @@ function StudentManagement() {
               ) : (
                 /* Import Results */
                 <div className="mb-6">
-                  <div className={`p-4 rounded-lg border ${
-                    importResults.success > 0 && importResults.errors === 0
-                      ? 'bg-green-50 border-green-200'
-                      : importResults.errors > 0
-                      ? 'bg-yellow-50 border-yellow-200'
-                      : 'bg-red-50 border-red-200'
+                  <div className={`p-6 rounded-xl shadow-lg border-2 ${
+                    (importResults.success || 0) > 0 && (importResults.errors || 0) === 0
+                      ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300'
+                      : (importResults.errors || 0) > 0
+                      ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300'
+                      : 'bg-gradient-to-br from-red-50 to-red-100 border-red-300'
                   }`}>
-                    <h3 className="text-sm font-medium mb-2">
-                      {importResults.success > 0 && importResults.errors === 0 ? '✅' : '⚠️'} Import Results
-                    </h3>
-                    <div className="text-sm space-y-1">
-                      <p><span className="font-medium">Successfully imported:</span> {importResults.success} students</p>
-                      <p><span className="font-medium">Errors:</span> {importResults.errors} rows</p>
-                      {importResults.errors > 0 && (
-                        <div className="mt-3">
-                          <p className="font-medium text-red-700 mb-2">Error Details:</p>
-                          <div className="bg-red-100 p-3 rounded text-xs text-red-800 max-h-32 overflow-y-auto">
-                            {importResults.error_details.map((error, index) => (
-                              <div key={index}>Row {error.row}: {error.message}</div>
-                            ))}
+                    <div className="flex items-center mb-4">
+                      <div className={`text-4xl mr-4 ${
+                        (importResults.success || 0) > 0 && (importResults.errors || 0) === 0 ? 'animate-bounce' : ''
+                      }`}>
+                        {(importResults.success || 0) > 0 && (importResults.errors || 0) === 0 ? '🎉' : '⚠️'}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {(importResults.success || 0) > 0 && (importResults.errors || 0) === 0 ? '🎯 Import Successful!' : '⚠️ Import Completed with Issues'}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {(importResults.success || 0) > 0 && (importResults.errors || 0) === 0 ? 'All students imported successfully!' : 'Some students may not have been imported'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 mb-4">
+                      {/* Success Stats */}
+                      <div className="bg-white bg-opacity-70 p-4 rounded-lg border border-green-200">
+                        <div className="flex items-center">
+                          <div className="text-2xl mr-3">✅</div>
+                          <div>
+                            <div className="text-3xl font-bold text-green-600">
+                              {importResults.success || importResults.success === 0 ? importResults.success.toLocaleString() : '–'}
+                            </div>
+                            <div className="text-sm font-medium text-gray-700">Students Imported</div>
                           </div>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Error Stats */}
+                      <div className="bg-white bg-opacity-70 p-4 rounded-lg border border-yellow-200">
+                        <div className="flex items-center">
+                          <div className={`text-2xl mr-3 ${importResults.errors > 0 ? 'animate-pulse' : ''}`}>⚠️</div>
+                          <div>
+                            <div className="text-3xl font-bold text-yellow-600">
+                              {importResults.errors || importResults.errors === 0 ? importResults.errors.toLocaleString() : '–'}
+                            </div>
+                            <div className="text-sm font-medium text-gray-700">Errors Found</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {(importResults.errors || 0) > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-red-700 mb-3">🔍 Error Details:</h4>
+                        <div className="bg-white bg-opacity-80 p-4 rounded-lg border border-red-200 max-h-48 overflow-y-auto">
+                          <div className="text-xs text-red-800 font-mono space-y-1">
+                            {Array.isArray(importResults.error_details) && importResults.error_details.length > 0 ? (
+                              importResults.error_details.map((error, index) => (
+                                <div key={index} className="bg-red-50 p-2 rounded border-l-2 border-red-300">
+                                  <span className="font-medium">Row {error.row}:</span> {error.message}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-gray-600 italic">
+                                No detailed error information available. Please check your CSV format.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-6 text-center">
+                      <p className="text-sm text-gray-600">
+                        💡 <strong>Next Steps:</strong> The imported students are now available in your Student Management dashboard.
+                        {(importResults.success || 0) > 0 ? ' You can start assigning them to exam rooms!' : ''}
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -92,10 +92,12 @@ class User(UserMixin, db.Model):
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
     student_number = db.Column(db.String(20), unique=True, nullable=False)
-    department = db.Column(db.String(100))
-    year = db.Column(db.Integer)
+    student_id = db.Column(db.String(100), nullable=False)  # Email/ID
+    department = db.Column(db.String(100), nullable=True)
+    courses = db.Column(db.Text, nullable=True)  # Comma-separated courses
 
     enrollments = db.relationship('Enrollment', backref='student', lazy=True)
     room_assignments = db.relationship('RoomAssignment', backref='student', lazy=True)
@@ -210,7 +212,14 @@ def init_db_route():
         db.session.flush()
 
         # Create sample student
-        student = Student(user_id=users_data[3].id, student_number='S2023001', department='Computer Science', year=3)
+        student = Student(
+            first_name='Student',
+            last_name='Sara',
+            student_number='S2023001',
+            student_id='sara@student.edu',
+            department='Computer Science',
+            courses='CS301,CHEM101,MATH201'
+        )
         db.session.add(student)
         db.session.flush()
 
@@ -688,6 +697,98 @@ def save_students():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+@app.route('/students/bulk-import', methods=['POST'])
+@login_required
+def bulk_import_students():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    if not file.filename.endswith('.csv'):
+        return jsonify({"error": "Invalid file type. Please upload a CSV file."}), 400
+
+    data = file.read().decode('utf-8')
+
+    try:
+        df = pd.read_csv(io.StringIO(data))
+
+        # Validate required columns (our CSV has: first_name,last_name,student_number,student_id,department,courses)
+        required_cols = ['first_name', 'last_name', 'student_number', 'student_id']
+        if not all(col in df.columns for col in required_cols):
+            return jsonify({"error": f"Missing required columns. Expected: {', '.join(required_cols)}"}), 400
+
+        success_count = 0
+        error_count = 0
+        error_details = []
+
+        with app.app_context():
+            for index, row in df.iterrows():
+                try:
+                    # Extract data from CSV row
+                    first_name = str(row.get('first_name', '')).strip()
+                    last_name = str(row.get('last_name', '')).strip()
+                    student_number = str(row.get('student_number', '')).strip()
+                    student_id = str(row.get('student_id', '')).strip()
+                    department = str(row.get('department', '')).strip() if 'department' in df.columns else None
+                    courses = str(row.get('courses', '')).strip() if 'courses' in df.columns else None
+
+                    # Validate required fields
+                    if not all([first_name, last_name, student_number, student_id]):
+                        error_count += 1
+                        error_details.append({
+                            "row": index + 2,  # +2 for 1-indexed + header row
+                            "message": "Missing required fields (first_name, last_name, student_number, student_id)"
+                        })
+                        continue
+
+                    # Check for duplicate student_number
+                    existing_student = Student.query.filter_by(student_number=student_number).first()
+                    if existing_student:
+                        error_count += 1
+                        error_details.append({
+                            "row": index + 2,
+                            "message": f"Student number '{student_number}' already exists"
+                        })
+                        continue
+
+                    # Create new student
+                    student = Student(
+                        first_name=first_name,
+                        last_name=last_name,
+                        student_number=student_number,
+                        student_id=student_id,
+                        department=department,
+                        courses=courses
+                    )
+
+                    db.session.add(student)
+                    success_count += 1
+
+                except Exception as e:
+                    error_count += 1
+                    error_details.append({
+                        "row": index + 2,
+                        "message": str(e)
+                    })
+                    continue
+
+            db.session.commit()
+
+        return jsonify({
+            "success": success_count,
+            "errors": error_count,
+            "error_details": error_details[:10]  # Limit error details to first 10
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e), "success": 0, "errors": 0}), 400
 
 @app.route('/assign-students', methods=['POST'])
 @login_required

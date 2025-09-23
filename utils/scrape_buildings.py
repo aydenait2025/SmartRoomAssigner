@@ -32,11 +32,11 @@ try:
             print(f"Found building: {value},{text}")
 
     # Save to CSV with two columns, no header
-    with open("../buildings.csv", "w", newline="", encoding="utf-8") as f:
+    with open("../../data/processed/buildings.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerows(buildings)
 
-    print("All buildings saved to ../buildings.csv (no header, just Code,Building)")
+    print("All buildings saved to ../../data/processed/buildings.csv (no header, just Code,Building)")
 
 finally:
     driver.quit()

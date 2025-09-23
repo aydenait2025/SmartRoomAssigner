@@ -18,6 +18,34 @@ cookies/
 *cookie*.txt
 session.txt
 
+# Processing artifacts (can be regenerated)
+data/processed/
+*.log
+*.cache
+*.tmp
+
+# Development artifacts
+.vscode/
+.cache/
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build artifacts
+/build
+/dist
+.parcel-cache
+
+# Database files (use Docker volumes)
+*.db
+*.sqlite3
+
+# System backup files
+*~
+*.bak
+*.swp
+
 # IDE configuration
 .vscode/
 .idea/

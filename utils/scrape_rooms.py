@@ -7,8 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, TimeoutException
 
 URL = "https://lsm.utoronto.ca/webapp/f?p=210:1::::::"
-BUILDINGS_CSV = "../buildings.csv"
-ROOMS_CSV = "../rooms.csv"
+BUILDINGS_CSV = "../../data/processed/buildings.csv"
+ROOMS_CSV = "../../data/processed/rooms.csv"
 
 options = webdriver.FirefoxOptions()
 options.add_argument("--headless")
@@ -83,4 +83,4 @@ with open(ROOMS_CSV, "w", newline="", encoding="utf-8") as f:
                 print(f"Failed to process room {room_value} in building {building}: {e}")
 
 driver.quit()
-print("Done! All buildings and rooms saved to ../rooms.csv")
+print("Done! All buildings and rooms saved to ../../data/processed/rooms.csv")
