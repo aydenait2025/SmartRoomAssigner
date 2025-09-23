@@ -159,7 +159,7 @@ function BuildingView() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-7xl mx-auto sm:p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-2xl font-bold">🏢 Building Management</h3>
@@ -274,11 +274,11 @@ function BuildingView() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Buildings</option>
-              <option value="available">🟢 Available</option>
-              <option value="unavailable">🔴 Unavailable</option>
+              <option value="available">Available</option>
+              <option value="unavailable">Unavailable</option>
             </select>
           </div>
           <div>
@@ -377,7 +377,7 @@ function BuildingView() {
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {building.available_rooms > 0 ? '🟢 Available' : '🔴 Unavailable'}
+                          {building.available_rooms > 0 ? 'Available' : 'Unavailable'}
                         </span>
                       </td>
                     </tr>

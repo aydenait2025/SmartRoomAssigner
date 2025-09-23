@@ -17,7 +17,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_very_secret_key') # Replace with a strong secret key
-CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://127.0.0.1:3000"]) # Enable CORS for credentials
+CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001"]) # Enable CORS for credentials
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:password@db:5432/smartroomassign')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -60,11 +60,23 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Database Models
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f"<Role {self.name}>"
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(50), nullable=False, default='student') # 'admin' or 'student'
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
+    role = db.relationship('Role', backref='users')
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    student_profile = db.relationship('Student', backref='user', uselist=False, lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -72,34 +84,84 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def __repr__(self):
-        return f"<User {self.username} ({self.role})>"
-
-class Room(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    building_name = db.Column(db.String(100), nullable=False)
-    room_number = db.Column(db.String(50), nullable=False)
-    room_capacity = db.Column(db.Integer, nullable=False)
-    testing_capacity = db.Column(db.Integer, default=0)
-    allowed = db.Column(db.Boolean, default=True)
-    assignments = db.relationship('Assignment', backref='room', lazy=True)
+    def is_admin(self):
+        return self.role.name == 'admin' if self.role else False
 
     def __repr__(self):
-        return f"<Room {self.building_name}-{self.room_number}>"
+        return f"<User {self.name} ({self.role.name if self.role else 'no role'})>"
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
-    student_number = db.Column(db.String(50), unique=True, nullable=False)
-    student_id = db.Column(db.String(50), unique=True, nullable=False) # Assuming student_id is unique identifier for login
-    assignment = db.relationship('Assignment', backref='student', uselist=False, lazy=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Link to User for student login
-    user = db.relationship('User', backref='student_profile', uselist=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    student_number = db.Column(db.String(20), unique=True, nullable=False)
+    department = db.Column(db.String(100))
+    year = db.Column(db.Integer)
+
+    enrollments = db.relationship('Enrollment', backref='student', lazy=True)
+    room_assignments = db.relationship('RoomAssignment', backref='student', lazy=True)
 
     def __repr__(self):
-        return f"<Student {self.first_name} {self.last_name}>"
+        return f"<Student {self.student_number}>"
 
+class Building(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(10), unique=True, nullable=False)
+    address = db.Column(db.Text)
+
+    rooms = db.relationship('Room', backref='building', lazy=True)
+
+    def __repr__(self):
+        return f"<Building {self.code}: {self.name}>"
+
+class Room(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    building_id = db.Column(db.Integer, db.ForeignKey('building.id'), nullable=False)
+    room_number = db.Column(db.String(20), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+    floor = db.Column(db.Integer)
+    type = db.Column(db.String(50))
+
+    room_assignments = db.relationship('RoomAssignment', backref='room', lazy=True)
+
+    def __repr__(self):
+        return f"<Room {self.building.code if self.building else 'Unknown'}-{self.room_number}>"
+
+class Exam(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_name = db.Column(db.String(100))
+    course_code = db.Column(db.String(20))
+    exam_date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    creator = db.relationship('User', backref='created_exams', lazy=True)
+
+    enrollments = db.relationship('Enrollment', backref='exam', lazy=True)
+    room_assignments = db.relationship('RoomAssignment', backref='exam', lazy=True)
+
+    def __repr__(self):
+        return f"<Exam {self.course_code} on {self.exam_date}>"
+
+class Enrollment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
+
+    def __repr__(self):
+        return f"<Enrollment Student: {self.student_id}, Exam: {self.exam_id}>"
+
+class RoomAssignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    seat_number = db.Column(db.String(10))
+
+    def __repr__(self):
+        return f"<RoomAssignment Student: {self.student_id}, Room: {self.room_id}, Exam: {self.exam_id}>"
+
+# Keep the old Assignment model for backward compatibility
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), unique=True, nullable=False)
@@ -118,14 +180,84 @@ def index():
 @app.route('/init-db')
 def init_db_route():
     with app.app_context():
-        db.create_all()
-        # Create a default admin user if not exists
-        if not User.query.filter_by(username='admin').first():
-            admin_user = User(username='admin', role='admin')
-            admin_user.set_password('adminpassword') # Change this in production!
-            db.session.add(admin_user)
-            db.session.commit()
-    return "Database initialized and default admin user created!"
+        db.drop_all() # Drop all existing tables
+        db.create_all() # Create all tables (including the updated User table)
+
+        # Create roles
+        roles_data = [
+            Role(name='admin'),
+            Role(name='professor'),
+            Role(name='ta'),
+            Role(name='student')
+        ]
+        db.session.add_all(roles_data)
+        db.session.flush()  # Get IDs for roles
+
+        # Get role IDs
+        admin_role = Role.query.filter_by(name='admin').first()
+        professor_role = Role.query.filter_by(name='professor').first()
+        ta_role = Role.query.filter_by(name='ta').first()
+        student_role = Role.query.filter_by(name='student').first()
+
+        # Create sample users
+        users_data = [
+            User(name='Alice Admin', email='alice@examspace.com', role_id=admin_role.id, password_hash=generate_password_hash('hashed_pwd1')),
+            User(name='Dr. Bob', email='bob@university.edu', role_id=professor_role.id, password_hash=generate_password_hash('hashed_pwd2')),
+            User(name='Tom TA', email='tom@university.edu', role_id=ta_role.id, password_hash=generate_password_hash('hashed_pwd3')),
+            User(name='Student Sara', email='sara@student.edu', role_id=student_role.id, password_hash=generate_password_hash('hashed_pwd4'))
+        ]
+        db.session.add_all(users_data)
+        db.session.flush()
+
+        # Create sample student
+        student = Student(user_id=users_data[3].id, student_number='S2023001', department='Computer Science', year=3)
+        db.session.add(student)
+        db.session.flush()
+
+        # Create buildings
+        buildings_data = [
+            Building(name='Main Building', code='MB', address='123 Campus Drive'),
+            Building(name='Science Hall', code='SH', address='456 Science Lane')
+        ]
+        db.session.add_all(buildings_data)
+        db.session.flush()
+
+        # Create rooms
+        rooms_data = [
+            Room(building_id=buildings_data[0].id, room_number='101', capacity=30, floor=1, type='Lecture'),
+            Room(building_id=buildings_data[0].id, room_number='102', capacity=25, floor=1, type='Lab'),
+            Room(building_id=buildings_data[1].id, room_number='201', capacity=40, floor=2, type='Lecture')
+        ]
+        db.session.add_all(rooms_data)
+        db.session.flush()
+
+        # Create sample exam
+        exam = Exam(
+            course_name='Introduction to Databases',
+            course_code='CS301',
+            exam_date='2025-12-10',
+            start_time='09:00:00',
+            end_time='12:00:00',
+            created_by=users_data[1].id  # Dr. Bob
+        )
+        db.session.add(exam)
+        db.session.flush()
+
+        # Create enrollment
+        enrollment = Enrollment(student_id=student.id, exam_id=exam.id)
+        db.session.add(enrollment)
+
+        # Create room assignment
+        room_assignment = RoomAssignment(
+            exam_id=exam.id,
+            room_id=rooms_data[0].id,
+            student_id=student.id,
+            seat_number='A1'
+        )
+        db.session.add(room_assignment)
+
+        db.session.commit()
+    return "Database initialized with sample data for all tables!"
 
 @app.route('/seed-buildings')
 @login_required

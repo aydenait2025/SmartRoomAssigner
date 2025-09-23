@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import AdminLayout from './AdminLayout';
 
 function CourseManagement() {
   const [courses, setCourses] = useState([]);
@@ -37,7 +38,7 @@ function CourseManagement() {
       setTotalPages(response.data.total_pages);
       setTotalItems(response.data.total_items);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to fetch courses');
+      setError(err.response?.data?.error || '');
     } finally {
       setLoading(false);
     }
@@ -170,26 +171,20 @@ function CourseManagement() {
   }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-2xl font-bold">📚 Course Management</h3>
-          <p className="text-gray-600">Manage all courses, track enrollment, and monitor assignment status</p>
-        </div>
-        <div className="flex space-x-2">
+    <AdminLayout title="📚 Course Management">
+      <div className="flex justify-end space-x-2 mb-6">
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
           >
             ➕ Add New Course
           </button>
-          <button
-            onClick={() => {/* TODO: Export functionality */}}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-          >
-            📊 Export Data
-          </button>
-        </div>
+        <button
+          onClick={() => {/* TODO: Export functionality */}}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+        >
+          📊 Export Data
+        </button>
       </div>
 
       {message && <p className="text-green-500 mb-4">{message}</p>}
@@ -221,25 +216,25 @@ function CourseManagement() {
       <div className="mb-6 p-4 bg-white shadow-lg rounded-xl border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
               type="text"
               placeholder="Course code, name, or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-10 px-4 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Assignment Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Seating Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
             >
               <option value="all">All Courses</option>
-              <option value="assigned">✅ Fully Assigned</option>
-              <option value="unassigned">⏳ Partially Assigned</option>
+              <option value="assigned">Fully Assigned</option>
+              <option value="unassigned">Partially Assigned</option>
             </select>
           </div>
           <div>
@@ -247,12 +242,12 @@ function CourseManagement() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
             >
               <option value="name">Course Name</option>
               <option value="code">Course Code</option>
               <option value="students">Expected Students</option>
-              <option value="status">Assignment Status</option>
+              <option value="status">Seating Status</option>
             </select>
           </div>
           <div>
@@ -260,7 +255,7 @@ function CourseManagement() {
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
             >
               <option value="asc">↑ Ascending</option>
               <option value="desc">↓ Descending</option>
@@ -293,7 +288,7 @@ function CourseManagement() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Expected Students</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned Students</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assignment Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Seating Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -400,42 +395,42 @@ function CourseManagement() {
             <h3 className="text-lg font-bold mb-4">Add New Course</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Code</label>
                 <input
                   type="text"
                   value={newCourse.course_code}
                   onChange={(e) => setNewCourse({...newCourse, course_code: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                   placeholder="e.g., CSC108"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
                 <input
                   type="text"
                   value={newCourse.course_name}
                   onChange={(e) => setNewCourse({...newCourse, course_name: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                   placeholder="e.g., Introduction to Computer Science"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
                 <input
                   type="text"
                   value={newCourse.department}
                   onChange={(e) => setNewCourse({...newCourse, department: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                   placeholder="e.g., Computer Science"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Students</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Students</label>
                 <input
                   type="number"
                   value={newCourse.expected_students}
                   onChange={(e) => setNewCourse({...newCourse, expected_students: parseInt(e.target.value) || 0})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                   placeholder="e.g., 200"
                 />
               </div>
@@ -465,39 +460,39 @@ function CourseManagement() {
             <h3 className="text-lg font-bold mb-4">Edit Course</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Code</label>
                 <input
                   type="text"
                   value={editingCourse.course_code}
                   onChange={(e) => setEditingCourse({...editingCourse, course_code: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
                 <input
                   type="text"
                   value={editingCourse.course_name}
                   onChange={(e) => setEditingCourse({...editingCourse, course_name: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
                 <input
                   type="text"
                   value={editingCourse.department}
                   onChange={(e) => setEditingCourse({...editingCourse, department: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Students</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Students</label>
                 <input
                   type="number"
                   value={editingCourse.expected_students}
                   onChange={(e) => setEditingCourse({...editingCourse, expected_students: parseInt(e.target.value) || 0})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
                 />
               </div>
             </div>
@@ -518,7 +513,7 @@ function CourseManagement() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
 

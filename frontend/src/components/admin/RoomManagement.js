@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AdminLayout from './AdminLayout';
+import { useToast } from '../../hooks/useToast';
 
 function RoomManagement() {
+  const navigate = useNavigate();
+  const { successToast, errorToast } = useToast();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,7 +44,7 @@ function RoomManagement() {
       setTotalPages(response.data.total_pages);
       setTotalItems(response.data.total_items);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to fetch rooms');
+      setError(err.response?.data?.error || '');
     } finally {
       setLoading(false);
     }
@@ -50,18 +55,22 @@ function RoomManagement() {
   }, []);
 
   const handleAddRoom = async () => {
+    const buildingName = newRoom.building_name;
     try {
       setError('');
       setMessage('');
 
       // Add room via API
       const response = await axios.post('/rooms', newRoom, { withCredentials: true });
-      setMessage('Room added successfully!');
+
+      // Smart success feedback with guidance
+      successToast(`Room ${newRoom.room_number} added to ${buildingName}. Total rooms: ${totalItems + 1}. Ready for exam assignments!`, 5000);
+
       setShowAddModal(false);
       setNewRoom({ building_name: '', room_number: '', room_capacity: 30, testing_capacity: 60, allowed: true });
       fetchRooms();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to add room');
+      errorToast(err.response?.data?.error || 'Failed to add room');
     }
   };
 
@@ -183,26 +192,20 @@ function RoomManagement() {
   }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-2xl font-bold">🚪 Room Management</h3>
-          <p className="text-gray-600">Manage all rooms, view details, and modify room information</p>
-        </div>
-        <div className="flex space-x-2">
+    <AdminLayout title="🚪 Room Management">
+      <div className="flex justify-end space-x-2 mb-6">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
           >
             ➕ Add New Room
           </button>
-          <button
-            onClick={() => {/* TODO: Export functionality */}}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-          >
-            📊 Export Data
-          </button>
-        </div>
+        <button
+          onClick={() => {/* TODO: Export functionality */}}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+        >
+          📊 Export Data
+        </button>
       </div>
 
       {message && <p className="text-green-500 mb-4">{message}</p>}
@@ -234,13 +237,13 @@ function RoomManagement() {
       <div className="mb-6 p-4 bg-white shadow-lg rounded-xl border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Rooms</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
             <input
               type="text"
               placeholder="Building or room number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -248,11 +251,11 @@ function RoomManagement() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">All Status</option>
-              <option value="available">✅ Available</option>
-              <option value="disabled">❌ Disabled</option>
+              <option value="all">All Courses</option>
+              <option value="available">Available</option>
+              <option value="disabled">Disabled</option>
             </select>
           </div>
           <div>
@@ -260,7 +263,7 @@ function RoomManagement() {
             <select
               value={buildingFilter}
               onChange={(e) => setBuildingFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Buildings</option>
               {uniqueBuildings.map(building => (
@@ -273,7 +276,7 @@ function RoomManagement() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="building">Building Name</option>
               <option value="room">Room Number</option>
@@ -286,7 +289,7 @@ function RoomManagement() {
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="asc">↑ Ascending</option>
               <option value="desc">↓ Descending</option>
@@ -304,7 +307,7 @@ function RoomManagement() {
             <p className="text-gray-600 mb-4">Add a new room or import room data to get started.</p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Add First Room
             </button>
@@ -409,7 +412,7 @@ function RoomManagement() {
                   type="text"
                   value={newRoom.building_name}
                   onChange={(e) => setNewRoom({...newRoom, building_name: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="e.g., AB - Astronomy and Astrophysics"
                 />
               </div>
@@ -419,7 +422,7 @@ function RoomManagement() {
                   type="text"
                   value={newRoom.room_number}
                   onChange={(e) => setNewRoom({...newRoom, room_number: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="e.g., 101"
                 />
               </div>
@@ -429,7 +432,7 @@ function RoomManagement() {
                   type="number"
                   value={newRoom.room_capacity}
                   onChange={(e) => setNewRoom({...newRoom, room_capacity: parseInt(e.target.value)})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -438,7 +441,7 @@ function RoomManagement() {
                   type="number"
                   value={newRoom.testing_capacity}
                   onChange={(e) => setNewRoom({...newRoom, testing_capacity: parseInt(e.target.value)})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div className="flex items-center">
@@ -460,7 +463,7 @@ function RoomManagement() {
               </button>
               <button
                 onClick={handleAddRoom}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
                 Add Room
               </button>
@@ -481,7 +484,7 @@ function RoomManagement() {
                   type="text"
                   value={editingRoom.building_name}
                   onChange={(e) => setEditingRoom({...editingRoom, building_name: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -490,7 +493,7 @@ function RoomManagement() {
                   type="text"
                   value={editingRoom.room_number}
                   onChange={(e) => setEditingRoom({...editingRoom, room_number: e.target.value})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -499,7 +502,7 @@ function RoomManagement() {
                   type="number"
                   value={editingRoom.room_capacity}
                   onChange={(e) => setEditingRoom({...editingRoom, room_capacity: parseInt(e.target.value)})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -508,7 +511,7 @@ function RoomManagement() {
                   type="number"
                   value={editingRoom.testing_capacity}
                   onChange={(e) => setEditingRoom({...editingRoom, testing_capacity: parseInt(e.target.value)})}
-                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div className="flex items-center">
@@ -530,7 +533,7 @@ function RoomManagement() {
               </button>
               <button
                 onClick={handleEditRoom}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
                 Update Room
               </button>
@@ -538,7 +541,7 @@ function RoomManagement() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
 

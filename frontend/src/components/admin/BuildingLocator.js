@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
+import AdminLayout from './AdminLayout';
+
+// Fix for default marker icon issue with Webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 function BuildingLocator() {
   const [buildings, setBuildings] = useState([]);
@@ -7,17 +18,30 @@ function BuildingLocator() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef(null);
-  const googleMapRef = useRef(null);
+  const leafletMapRef = useRef(null); // Use a ref for the Leaflet map instance
+  const markersRef = useRef([]); // To keep track of Leaflet markers
 
   // University of Toronto coordinates (approximate center)
-  const UOFT_CENTER = { lat: 43.6629, lng: -79.3957 };
+  const UOFT_CENTER = [43.6629, -79.3957]; // Leaflet uses [lat, lng]
   const DEFAULT_ZOOM = 15;
 
   useEffect(() => {
     fetchBuildings();
-    loadGoogleMapsAPI();
+
+    // Wait for DOM to be ready before initializing map
+    const timer = setTimeout(() => {
+      initializeMap();
+    }, 100);
+
+    // Cleanup function for Leaflet map and timer
+    return () => {
+      clearTimeout(timer);
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
   }, []);
 
   const fetchBuildings = async () => {
@@ -26,91 +50,69 @@ function BuildingLocator() {
       const response = await axios.get('/buildings', { withCredentials: true });
       setBuildings(response.data.buildings || []);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to fetch buildings');
+      setError(err.response?.data?.error || '');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadGoogleMapsAPI = () => {
-    if (window.google && window.google.maps) {
-      setMapLoaded(true);
-      initializeMap();
-      return;
+  const initializeMap = () => {
+    if (leafletMapRef.current) {
+      leafletMapRef.current.remove(); // Remove existing map if re-initializing
     }
 
-    // Load Google Maps API
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyC1r1fMJnO1l6q2k8K3j8H9X4Y5Z6W7V8U&libraries=places`;
-    script.async = true;
-    script.onload = () => {
-      setMapLoaded(true);
-      initializeMap();
-    };
-    script.onerror = () => {
-      setError('Failed to load Google Maps. Please check your API key.');
-    };
-    document.head.appendChild(script);
-  };
+    // Initialize Leaflet map
+    leafletMapRef.current = L.map(mapRef.current).setView(UOFT_CENTER, DEFAULT_ZOOM);
 
-  const initializeMap = () => {
-    if (!window.google || !mapRef.current) return;
-
-    googleMapRef.current = new window.google.maps.Map(mapRef.current, {
-      center: UOFT_CENTER,
-      zoom: DEFAULT_ZOOM,
-      mapTypeControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(leafletMapRef.current);
 
     // Add UofT campus boundary
     addUofTCampusBoundary();
   };
 
   const addUofTCampusBoundary = () => {
-    if (!googleMapRef.current) return;
+    if (!leafletMapRef.current) return;
 
     // Approximate UofT St. George campus boundary
     const campusBoundary = [
-      { lat: 43.6700, lng: -79.4100 },
-      { lat: 43.6700, lng: -79.3800 },
-      { lat: 43.6500, lng: -79.3800 },
-      { lat: 43.6500, lng: -79.4100 },
+      [43.6700, -79.4100],
+      [43.6700, -79.3800],
+      [43.6500, -79.3800],
+      [43.6500, -79.4100],
     ];
 
-    new window.google.maps.Polyline({
-      path: campusBoundary,
-      geodesic: true,
-      strokeColor: '#FF0000',
-      strokeOpacity: 1.0,
-      strokeWeight: 2,
-      map: googleMapRef.current,
+    L.polyline(campusBoundary, {
+      color: 'red',
+      weight: 2,
+      opacity: 1.0,
+      dashArray: '5, 5' // Optional: dashed line
+    }).addTo(leafletMapRef.current);
+
+    // Add campus label marker
+    const uoftIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="#4285F4" stroke="#ffffff" stroke-width="2"/>
+          <text x="20" y="25" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">UofT</text>
+        </svg>
+      `,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
     });
 
-    // Add campus label
-    new window.google.maps.Marker({
-      position: UOFT_CENTER,
-      map: googleMapRef.current,
-      title: 'University of Toronto - St. George Campus',
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#4285F4" stroke="#ffffff" stroke-width="2"/>
-            <text x="20" y="25" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">UofT</text>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(40, 40),
-        anchor: new window.google.maps.Point(20, 20)
-      }
-    });
+    L.marker(UOFT_CENTER, { icon: uoftIcon, title: 'University of Toronto - St. George Campus' }).addTo(leafletMapRef.current);
   };
 
   const searchBuildings = (term) => {
     setSearchTerm(term);
     if (!term.trim()) {
       setSelectedBuilding(null);
+      // Optionally reset map view or clear markers
+      clearBuildingMarkers();
+      leafletMapRef.current.setView(UOFT_CENTER, DEFAULT_ZOOM);
       return;
     }
 
@@ -124,103 +126,90 @@ function BuildingLocator() {
     setSelectedBuilding(found || null);
     if (found) {
       showBuildingOnMap(found);
+    } else {
+      clearBuildingMarkers();
     }
+  };
+
+  const clearBuildingMarkers = () => {
+    markersRef.current.forEach(marker => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.removeLayer(marker);
+      }
+    });
+    markersRef.current = [];
   };
 
   const showBuildingOnMap = (building) => {
-    if (!googleMapRef.current) return;
+    if (!leafletMapRef.current) return;
 
-    // Clear existing markers
-    if (window.buildingMarkers) {
-      window.buildingMarkers.forEach(marker => marker.setMap(null));
-    }
-    window.buildingMarkers = [];
+    clearBuildingMarkers(); // Clear existing markers
 
-    // Get building coordinates (you may want to add lat/lng to your building data)
     const buildingCoords = getBuildingCoordinates(building);
 
-    // Add marker for the building
-    const marker = new window.google.maps.Marker({
-      position: buildingCoords,
-      map: googleMapRef.current,
-      title: building.building_name,
-      animation: window.google.maps.Animation.DROP,
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="15" cy="15" r="12" fill="#FF6B35" stroke="#ffffff" stroke-width="2"/>
-            <text x="15" y="19" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">
-              ${building.building_name.split(' - ')[0]}
-            </text>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(30, 30),
-        anchor: new window.google.maps.Point(15, 15)
-      }
+    const buildingIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `
+        <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="15" cy="15" r="12" fill="#FF6B35" stroke="#ffffff" stroke-width="2"/>
+          <text x="15" y="19" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">
+            ${building.building_name.split(' - ')[0]}
+          </text>
+        </svg>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
     });
 
-    window.buildingMarkers = [marker];
+    const marker = L.marker(buildingCoords, { icon: buildingIcon, title: building.building_name }).addTo(leafletMapRef.current);
+    markersRef.current.push(marker);
 
-    // Center map on building
-    googleMapRef.current.setCenter(buildingCoords);
-    googleMapRef.current.setZoom(17);
+    leafletMapRef.current.setView(buildingCoords, 17); // Center map on building
 
-    // Add info window
-    const infoWindow = new window.google.maps.InfoWindow({
-      content: `
-        <div style="font-family: Arial, sans-serif; max-width: 250px;">
-          <h3 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">
-            ${building.building_name}
-          </h3>
-          <p style="margin: 4px 0; color: #666; font-size: 14px;">
-            <strong>Total Rooms:</strong> ${building.total_rooms}
-          </p>
-          <p style="margin: 4px 0; color: #666; font-size: 14px;">
-            <strong>Available Rooms:</strong> ${building.available_rooms}
-          </p>
-          <p style="margin: 4px 0; color: #666; font-size: 14px;">
-            <strong>Total Capacity:</strong> ${building.total_capacity}
-          </p>
-          <p style="margin: 4px 0; color: #666; font-size: 14px;">
-            <strong>Testing Capacity:</strong> ${building.total_testing_capacity}
-          </p>
-        </div>
-      `
-    });
+    const infoWindowContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 250px;">
+        <h3 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">
+          ${building.building_name}
+        </h3>
+        <p style="margin: 4px 0; color: #666; font-size: 14px;">
+          <strong>Total Rooms:</strong> ${building.total_rooms}
+        </p>
+        <p style="margin: 4px 0; color: #666; font-size: 14px;">
+          <strong>Available Rooms:</strong> ${building.available_rooms}
+        </p>
+        <p style="margin: 4px 0; color: #666; font-size: 14px;">
+          <strong>Total Capacity:</strong> ${building.total_capacity}
+        </p>
+        <p style="margin: 4px 0; color: #666; font-size: 14px;">
+          <strong>Testing Capacity:</strong> ${building.total_testing_capacity}
+        </p>
+      </div>
+    `;
 
-    marker.addListener('click', () => {
-      infoWindow.open(googleMapRef.current, marker);
-    });
-
-    // Open info window by default
-    setTimeout(() => {
-      infoWindow.open(googleMapRef.current, marker);
-    }, 500);
+    marker.bindPopup(infoWindowContent).openPopup();
   };
 
   const getBuildingCoordinates = (building) => {
-    // This is a mapping of building codes to approximate coordinates
-    // In a real implementation, you would store lat/lng in your database
     const buildingCoordinates = {
-      'AB': { lat: 43.6595, lng: -79.3972 }, // Astronomy & Astrophysics
-      'BA': { lat: 43.6598, lng: -79.3960 }, // Bahen Centre
-      'BN': { lat: 43.6650, lng: -79.4070 }, // Bloor - Dufferin area
-      'BW': { lat: 43.6610, lng: -79.3950 }, // Wallberg Building
-      'CR': { lat: 43.6605, lng: -79.3965 }, // Croft Chapter House
-      'EA': { lat: 43.6600, lng: -79.3940 }, // Earth Sciences Centre
-      'GB': { lat: 43.6615, lng: -79.3955 }, // Galbraith Building
-      'HI': { lat: 43.6580, lng: -79.3980 }, // Haultain Building
-      'KP': { lat: 43.6620, lng: -79.3945 }, // Northrop Frye Hall
-      'LM': { lat: 43.6630, lng: -79.3930 }, // Lash Miller Chemical Laboratories
-      'MP': { lat: 43.6590, lng: -79.3990 }, // McLennan Physical Laboratories
-      'MS': { lat: 43.6625, lng: -79.3950 }, // Medical Sciences Building
-      'NF': { lat: 43.6618, lng: -79.3948 }, // Northrop Frye Hall
-      'OI': { lat: 43.6585, lng: -79.3975 }, // Ontario Institute for Studies in Education
-      'PG': { lat: 43.6608, lng: -79.3958 }, // Sidney Smith Hall
-      'RW': { lat: 43.6592, lng: -79.3968 }, // Rosebrugh Building
-      'SS': { lat: 43.6608, lng: -79.3958 }, // Sidney Smith Hall
-      'UC': { lat: 43.6628, lng: -79.3955 }, // University College
-      'WE': { lat: 43.6612, lng: -79.3952 }, // Wetmore Hall
+      'AB': [43.6595, -79.3972], // Astronomy & Astrophysics
+      'BA': [43.6598, -79.3960], // Bahen Centre
+      'BN': [43.6650, -79.4070], // Bloor - Dufferin area
+      'BW': [43.6610, -79.3950], // Wallberg Building
+      'CR': [43.6605, -79.3965], // Croft Chapter House
+      'EA': [43.6600, -79.3940], // Earth Sciences Centre
+      'GB': [43.6615, -79.3955], // Galbraith Building
+      'HI': [43.6580, -79.3980], // Haultain Building
+      'KP': [43.6620, -79.3945], // Northrop Frye Hall
+      'LM': [43.6630, -79.3930], // Lash Miller Chemical Laboratories
+      'MP': [43.6590, -79.3990], // McLennan Physical Laboratories
+      'MS': [43.6625, -79.3950], // Medical Sciences Building
+      'NF': [43.6618, -79.3948], // Northrop Frye Hall
+      'OI': [43.6585, -79.3975], // Ontario Institute for Studies in Education
+      'PG': [43.6608, -79.3958], // Sidney Smith Hall
+      'RW': [43.6592, -79.3968], // Rosebrugh Building
+      'SS': [43.6608, -79.3958], // Sidney Smith Hall
+      'UC': [43.6628, -79.3955], // University College
+      'WE': [43.6612, -79.3952], // Wetmore Hall
     };
 
     const code = building.building_name.split(' - ')[0];
@@ -244,20 +233,14 @@ function BuildingLocator() {
   }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-2xl font-bold">🗺️ Building Locator</h3>
-          <p className="text-gray-600">Find and locate campus buildings on the interactive map</p>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={fetchBuildings}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-          >
-            🔄 Refresh Buildings
-          </button>
-        </div>
+    <AdminLayout title="🗺️ Building Locator">
+      <div className="flex justify-end space-x-2 mb-6">
+        <button
+          onClick={fetchBuildings}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+        >
+          🔄 Refresh Buildings
+        </button>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -362,14 +345,7 @@ function BuildingLocator() {
               className="w-full h-96 lg:h-[500px]"
               style={{ minHeight: '400px' }}
             >
-              {!mapLoaded && (
-                <div className="flex items-center justify-center h-full bg-gray-100">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🗺️</div>
-                    <div className="text-gray-600">Loading Google Maps...</div>
-                  </div>
-                </div>
-              )}
+              {/* Leaflet map will render here */}
             </div>
             <div className="p-4 bg-gray-50 text-xs text-gray-600">
               <p>
@@ -435,7 +411,7 @@ function BuildingLocator() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
 
