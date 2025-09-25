@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -11,19 +12,21 @@ import BuildingLocator from './components/admin/BuildingLocator';
 import ScheduleManagement from './components/admin/ScheduleManagement';
 import Reports from './components/admin/Reports';
 
+// Configure axios to use the API URL from environment variables
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+axios.defaults.withCredentials = true;
+
 function App() {
   // This is a placeholder for authentication logic.
   // In a real application, you would check for a token or user session.
   const isAuthenticated = () => {
-    // Temporarily return true for testing the admin dashboard
-    return true;
-    // return localStorage.getItem('token') !== null;
+    // Check for authentication token
+    return localStorage.getItem('token') !== null;
   };
 
   const isAdmin = () => {
-    // Temporarily return true for testing the admin dashboard
-    return true;
-    // return localStorage.getItem('userRole') === 'admin';
+    // Check for admin role
+    return localStorage.getItem('userRole') === 'admin';
   };
 
   const isStudent = () => {

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Education-related image placeholder
 const loginBg = 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
-function Login({ setLoggedInUser }) {
-  const [username, setUsername] = useState(localStorage.getItem('rememberedUsername') || '');
-  const [password, setPassword] = useState('1');
+function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(localStorage.getItem('rememberedUsername') || '');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('rememberedUsername'));
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -16,21 +18,37 @@ function Login({ setLoggedInUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
     try {
-      const response = await axios.post('http://localhost:5000/login', { username, password }, { withCredentials: true });
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+      const response = await axios.post(`${apiUrl}/login`, { email, password }, { withCredentials: true });
+
       if (rememberMe) {
-        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberedUsername', email);
       } else {
         localStorage.removeItem('rememberedUsername');
       }
-      setLoggedInUser(response.data.user);
+
+      if (response.data.user) {
+        localStorage.setItem('token', response.data.token || 'logged-in');
+        localStorage.setItem('userRole', response.data.user.role);
+
+        if (response.data.user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/student/dashboard');
+        }
+      } else {
+        setError('No user data received from server');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     }
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
       style={{ backgroundImage: `url(${loginBg})` }}
     >
@@ -49,8 +67,8 @@ function Login({ setLoggedInUser }) {
 
         {/* Right Side - Login Form */}
         <div className="w-1/2 p-8 flex items-center justify-center z-10">
-          <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <h2 className="text-3xl font-bold text-center mb-6">Sign in</h2>
+          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md border-2 border-gray-200">
+            <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Sign in</h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
@@ -60,8 +78,8 @@ function Login({ setLoggedInUser }) {
                   type="text"
                   id="username"
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -106,8 +124,8 @@ function Login({ setLoggedInUser }) {
                 </button>
               </div>
               <p className="text-center text-sm text-gray-600">
-                By clicking on "Sign in now" you agree to 
-                <a href="#" className="text-orange-500 hover:underline"> Terms of Service</a> | 
+                By clicking on "Sign in now" you agree to
+                <a href="#" className="text-orange-500 hover:underline"> Terms of Service</a> |
                 <a href="#" className="text-orange-500 hover:underline"> Privacy Policy</a>
               </p>
             </form>
@@ -152,7 +170,8 @@ function Login({ setLoggedInUser }) {
                     return;
                   }
                   try {
-                    await axios.post('http://localhost:5000/forgot-password', { email: forgotPasswordEmail });
+                    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+                    await axios.post(`${apiUrl}/forgot-password`, { email: forgotPasswordEmail });
                     setResetMessage('Password reset email sent successfully. Please check your email.');
                   } catch (error) {
                     setResetMessage(error.response?.data?.error || 'Failed to send reset email');

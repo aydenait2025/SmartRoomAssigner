@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../Logo';
 
 function AdminLayout({ children, title = "Dashboard" }) {
+  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleLogout = () => {
+    // Clear authentication data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('rememberedUsername');
+
+    // Navigate to login page
+    navigate('/login');
   };
 
   return (
@@ -146,17 +157,31 @@ function AdminLayout({ children, title = "Dashboard" }) {
 
         </nav>
 
-        {/* Footer with user profile */}
+        {/* Footer with user profile and logout */}
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
-                👤
+            <div className="flex items-center justify-between">
+              {/* User profile section */}
+              <div className="flex items-center space-x-3 flex-1">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
+                  👤
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">Admin User</p>
+                  <p className="text-xs text-white truncate">Administrator</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-white truncate">Admin User</p>
-                <p className="text-xs text-white truncate">Administrator</p>
-              </div>
+
+              {/* Logout button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-200"
+                title="Logout"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
           </div>
         )}

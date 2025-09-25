@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -9,6 +9,7 @@ import pandas as pd
 import io
 import csv
 import secrets
+from math import floor
 # from flask_mail import Mail, Message  # Commented out as it's not currently used
 import requests
 from authlib.integrations.flask_client import OAuth
@@ -17,9 +18,19 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_very_secret_key') # Replace with a strong secret key
-CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001"]) # Enable CORS for credentials
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://142.1.92.247:3000",
+    "http://localhost:5000",
+    "http://localhost:8080",  # Frontend dev server
+    "http://127.0.0.1:3000",  # Alternative localhost
+    "http://172.20.0.1:3000",  # Docker bridge network
+    "http://172.20.0.1:5000"   # Direct backend access from Docker
+]) # Enable CORS for credentials
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:password@db:5432/smartroomassign')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:password@localhost:5432/smartroomassign')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -76,7 +87,7 @@ class User(UserMixin, db.Model):
     role = db.relationship('Role', backref='users')
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-    student_profile = db.relationship('Student', backref='user', uselist=False, lazy=True)
+    # student_profile = db.relationship('Student', backref='user', uselist=False, lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -201,12 +212,12 @@ def init_db_route():
         ta_role = Role.query.filter_by(name='ta').first()
         student_role = Role.query.filter_by(name='student').first()
 
-        # Create sample users
+        # Create sample users with simple passwords for testing
         users_data = [
-            User(name='Alice Admin', email='alice@examspace.com', role_id=admin_role.id, password_hash=generate_password_hash('hashed_pwd1')),
-            User(name='Dr. Bob', email='bob@university.edu', role_id=professor_role.id, password_hash=generate_password_hash('hashed_pwd2')),
-            User(name='Tom TA', email='tom@university.edu', role_id=ta_role.id, password_hash=generate_password_hash('hashed_pwd3')),
-            User(name='Student Sara', email='sara@student.edu', role_id=student_role.id, password_hash=generate_password_hash('hashed_pwd4'))
+            User(name='Alice Admin', email='alice@examspace.com', role_id=admin_role.id, password_hash=generate_password_hash('password')),
+            User(name='Dr. Bob', email='bob@university.edu', role_id=professor_role.id, password_hash=generate_password_hash('password')),
+            User(name='Tom TA', email='tom@university.edu', role_id=ta_role.id, password_hash=generate_password_hash('password')),
+            User(name='Student Sara', email='sara@student.edu', role_id=student_role.id, password_hash=generate_password_hash('password'))
         ]
         db.session.add_all(users_data)
         db.session.flush()
@@ -284,34 +295,7 @@ def seed_buildings():
         'EP': 'Stewart Building',
         'ES': 'Earth Sciences Centre',
         'EX': 'Exam Centre',
-        'FE': 'Bloor Street West-371',
-        'GB': 'Galbraith Building',
-        'HA': 'Haultain Building',
-        'HS': 'Health Sciences Building',
-        'IN': 'Innis College',
-        'KP': 'Koffler House',
-        'MB': 'Lassonde Mining Building',
-        'MC': 'Mechanical Engineering Bldg',
-        'MP': 'McLennan Physical Laboratories',
-        'MS': 'Medical Sciences Building',
-        'MY': 'Myhal Centre MCEIE',
-        'NL': 'C David Naylor Building',
-        'OI': 'O.I.S.E.',
-        'PB': 'Leslie Dan Pharmacy Building',
-        'RL': 'Robarts Library Building',
-        'RU': 'Rehabilitation Sciences Bdg',
-        'RW': 'Ramsay Wright Laboratories',
-        'SF': 'Sandford Fleming Building',
-        'SK': 'Social Work, Faculty of',
-        'SS': 'Sidney Smith Hall',
-        'SU': 'Student Commons',
-        'TC': 'Trinity College',
-        'UC': 'University College',
-        'WB': 'Wallberg Building',
-        'WE': 'Wetmore Hall-New College',
-        'WI': 'Wilson Hall-New College',
-        'WO': 'Woodsworth College Residence',
-        'WW': 'Woodsworth College'
+        'FE': 'Bloor Street West-371'
     }
 
     with app.app_context():
@@ -320,30 +304,39 @@ def seed_buildings():
 
         for code, full_name in uoft_buildings.items():
             building_name = f"{code} - {full_name}"
+            address = f"University of Toronto - {building_name}"
 
-            # Create multiple rooms per building (3-6 rooms per building)
-            num_rooms = 3 if len(uoft_buildings) > 20 else 4  # Vary room count
+            # Check if building already exists
+            existing_building = Building.query.filter_by(name=building_name, code=code).first()
+            if existing_building:
+                continue  # Skip if building exists
 
+            # Create building first
+            building = Building(name=building_name, code=code, address=address)
+            db.session.add(building)
+            db.session.flush()  # Get the building ID
+
+            # Create 3 rooms per building
             buildings_created[building_name] = []
+            num_rooms = 3
 
             for room_num in range(1, num_rooms + 1):
-                # Use building code + room number
-                room_number = "255"  # Default room number, can be updated
-                room_capacity = 30  # Default capacity
-                testing_capacity = room_capacity * 2  # Testing capacity
+                room_capacity = 30
+                testing_capacity = room_capacity * 2
 
                 room = Room(
-                    building_name=building_name,
-                    room_number=str(room_num).zfill(3),
-                    room_capacity=room_capacity,
-                    testing_capacity=testing_capacity,
-                    allowed=True
+                    building_id=building.id,
+                    room_number=f"{floor(room_num/3)*100 + (room_num % 3) + 1:03d}",
+                    capacity=room_capacity,
+                    floor=floor(room_num/3) + 1,
+                    type='Lecture' if room_num % 2 == 0 else 'Lab'
                 )
 
                 buildings_created[building_name].append({
                     "room_number": room.room_number,
-                    "capacity": room.room_capacity,
-                    "testing_capacity": room.testing_capacity
+                    "capacity": room.capacity,
+                    "floor": room.floor,
+                    "type": room.type
                 })
 
                 db.session.add(room)
@@ -352,7 +345,7 @@ def seed_buildings():
         db.session.commit()
 
         return jsonify({
-            "message": f"Successfully added {len(uoft_buildings)} buildings with {rooms_added} total rooms",
+            "message": f"Successfully added {len(buildings_created)} buildings with {rooms_added} total rooms",
             "buildings_created": buildings_created
         }), 200
 
@@ -432,9 +425,9 @@ def import_buildings():
 
                     building_name = f"{building_code} - {building_full_name}"
 
-                # Check if building already exists (by checking if any room exists for this building_name)
-                existing_room = Room.query.filter_by(building_name=building_name).first()
-                if existing_room:
+                # Check if building already exists
+                existing_building = Building.query.filter_by(name=building_name, code=building_code).first()
+                if existing_building:
                     skipped_count += 1
                     continue # Skip if building already exists
 
@@ -445,10 +438,9 @@ def import_buildings():
 
                 for room_num in range(1, num_rooms + 1):
                     room = Room(
-                        building_name=building_name,
+                        building_id=building.id,
                         room_number=str(room_num).zfill(3),
-                        room_capacity=room_capacity,
-                        testing_capacity=testing_capacity,
+                        capacity=room_capacity,
                         allowed=True
                     )
                     db.session.add(room)
@@ -470,36 +462,56 @@ def import_buildings():
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    username = data.get('username')
+    email = data.get('email')
     password = data.get('password')
     role = data.get('role', 'student')
 
-    if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
 
     with app.app_context():
-        if User.query.filter_by(username=username).first():
-            return jsonify({"error": "Username already exists"}), 409
+        if User.query.filter_by(email=email).first():
+            return jsonify({"error": "Email already exists"}), 409
 
-        new_user = User(username=username, role=role)
-        new_user.set_password(password)
+        # Get role ID
+        role_obj = Role.query.filter_by(name=role).first()
+        if not role_obj:
+            return jsonify({"error": f"Invalid role: {role}"}), 400
+
+        new_user = User(name=email, email=email, role_id=role_obj.id, password_hash=generate_password_hash(password))
         db.session.add(new_user)
         db.session.commit()
         return jsonify({"message": "User registered successfully"}), 201
 
-@app.route('/login', methods=['POST'])
+@app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
 
-    with app.app_context():
-        user = User.query.filter_by(username=username).first()
+    email = data.get("email")
+    password = data.get("password")
 
-        if user and user.check_password(password):
-            login_user(user)
-            return jsonify({"message": "Logged in successfully", "user": {"id": user.id, "username": user.username, "role": user.role}}), 200
-        return jsonify({"error": "Invalid username or password"}), 401
+    if not email or not password:
+        return jsonify({"error": "Missing credentials"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 401
+
+    if not user.check_password(password):
+        return jsonify({"error": "Invalid password"}), 401
+
+    # Flask-Login session
+    login_user(user, remember=True)
+
+    # Return what React expects
+    return jsonify({
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role.name if user.role else None
+        },
+        "token": "dummy-session-token"
+    }), 200
 
 @app.route('/logout')
 @login_required
@@ -510,12 +522,12 @@ def logout():
 @app.route('/current_user')
 @login_required
 def get_current_user():
-    return jsonify({"id": current_user.id, "username": current_user.username, "role": current_user.role}), 200
+    return jsonify({"id": current_user.id, "username": current_user.email, "role": current_user.role.name if current_user.role else None}), 200
 
 @app.route('/upload-rooms', methods=['POST'])
 @login_required
 def upload_rooms():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     if 'file' not in request.files and 'text' not in request.form:
@@ -536,7 +548,7 @@ def upload_rooms():
 
     try:
         df = pd.read_csv(io.StringIO(data))
-        
+
         # Validate columns
         required_cols = ['Building Name', 'Room Number', 'Room Capacity']
         if not all(col in df.columns for col in required_cols):
@@ -547,7 +559,7 @@ def upload_rooms():
             df['Testing Capacity'] = 0
         else:
             df['Testing Capacity'] = df['Testing Capacity'].fillna(0)
-        
+
         # Fill missing 'Allowed flag' with True
         if 'Allowed flag' not in df.columns:
             df['Allowed flag'] = True
@@ -555,26 +567,36 @@ def upload_rooms():
             df['Allowed flag'] = df['Allowed flag'].fillna(True)
 
         rooms_to_add = []
-        for index, row in df.iterrows():
-            room = Room(
-                building_name=row['Building Name'],
-                room_number=row['Room Number'],
-                room_capacity=row['Room Capacity'],
-                testing_capacity=row['Testing Capacity'],
-                allowed=row['Allowed flag']
-            )
-            rooms_to_add.append(room)
-        
+        with app.app_context():
+            for index, row in df.iterrows():
+                # Find or create building first
+                building_name = row['Building Name']
+                building = Building.query.filter_by(name=building_name).first()
+                if not building:
+                    # Extract building code from name (e.g., "BA - Bahen Centre" -> "BA")
+                    building_code = building_name.split(' - ')[0] if ' - ' in building_name else building_name[:10]
+                    building = Building(name=building_name, code=building_code)
+                    db.session.add(building)
+                    db.session.flush()
+
+                room = Room(
+                    building_id=building.id,
+                    room_number=row['Room Number'],
+                    capacity=row['Room Capacity'],
+                    floor=1,  # Default to floor 1
+                    type='Lecture'  # Default type
+                )
+                rooms_to_add.append({
+                    "building_name": building.name,
+                    "room_number": row['Room Number'],
+                    "room_capacity": row['Room Capacity'],
+                    "testing_capacity": row['Testing Capacity'],
+                    "allowed": True
+                })
+            db.session.rollback()  # Don't save, just preview
+
         # For preview, we just return the processed data
-        return jsonify([
-            {
-                "building_name": r.building_name,
-                "room_number": r.room_number,
-                "room_capacity": r.room_capacity,
-                "testing_capacity": r.testing_capacity,
-                "allowed": r.allowed
-            } for r in rooms_to_add
-        ]), 200
+        return jsonify(rooms_to_add), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -582,7 +604,7 @@ def upload_rooms():
 @app.route('/save-rooms', methods=['POST'])
 @login_required
 def save_rooms():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     rooms_data = request.json
@@ -594,12 +616,21 @@ def save_rooms():
             # Clear existing rooms and add new ones
             db.session.query(Room).delete()
             for room_data in rooms_data:
+                # Find or create building first
+                building = Building.query.filter_by(name=room_data['building_name']).first()
+                if not building:
+                    # Extract building code from name (e.g., "BA - Bahen Centre" -> "BA")
+                    building_code = room_data['building_name'].split(' - ')[0] if ' - ' in room_data['building_name'] else room_data['building_name'][:10]
+                    building = Building(name=room_data['building_name'], code=building_code)
+                    db.session.add(building)
+                    db.session.flush()
+
                 room = Room(
-                    building_name=room_data['building_name'],
+                    building_id=building.id,
                     room_number=room_data['room_number'],
-                    room_capacity=room_data['room_capacity'],
-                    testing_capacity=room_data.get('testing_capacity', 0),
-                    allowed=room_data.get('allowed', True)
+                    capacity=room_data['room_capacity'],
+                    floor=1,  # Default to floor 1
+                    type='Lecture'  # Default type
                 )
                 db.session.add(room)
             db.session.commit()
@@ -1075,7 +1106,7 @@ def get_buildings():
 @app.route('/rooms', methods=['POST'])
 @login_required
 def create_room():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -1084,23 +1115,30 @@ def create_room():
 
     try:
         with app.app_context():
+            # Find or create building first
+            building = Building.query.filter_by(name=data['building_name']).first()
+            if not building:
+                # Extract building code from name (e.g., "BA - Bahen Centre" -> "BA")
+                building_code = data['building_name'].split(' - ')[0] if ' - ' in data['building_name'] else data['building_name'][:10]
+                building = Building(name=data['building_name'], code=building_code)
+                db.session.add(building)
+                db.session.flush()
+
             room = Room(
-                building_name=data['building_name'],
+                building_id=building.id,
                 room_number=data['room_number'],
-                room_capacity=data['room_capacity'],
-                testing_capacity=data.get('testing_capacity', data['room_capacity'] * 2),
-                allowed=data.get('allowed', True)
+                capacity=data['room_capacity'],
+                floor=1,  # Default to floor 1
+                type='Lecture'  # Default type
             )
             db.session.add(room)
             db.session.commit()
 
             return jsonify({
                 "id": room.id,
-                "building_name": room.building_name,
+                "building_name": building.name,
                 "room_number": room.room_number,
-                "room_capacity": room.room_capacity,
-                "testing_capacity": room.testing_capacity,
-                "allowed": room.allowed,
+                "room_capacity": room.capacity,
                 "message": "Room created successfully"
             }), 201
     except Exception as e:
@@ -1259,10 +1297,11 @@ def google_callback():
 
         # Create or get user based on Google email
         with app.app_context():
-            user = User.query.filter_by(username=user_info['email']).first()
+            user = User.query.filter_by(email=user_info['email']).first()
             if not user:
-                user = User(username=user_info['email'], role='student')
-                user.set_password(secrets.token_hex(16))  # Random password for OAuth users
+                # Get student role
+                student_role = Role.query.filter_by(name='student').first()
+                user = User(name=user_info.get('name', user_info['email']), email=user_info['email'], role_id=student_role.id, password_hash=generate_password_hash(secrets.token_hex(16)))
                 db.session.add(user)
                 db.session.commit()
 
@@ -1285,10 +1324,11 @@ def outlook_callback():
 
         # Create or get user based on Outlook email
         with app.app_context():
-            user = User.query.filter_by(username=user_info['mail']).first()
+            user = User.query.filter_by(email=user_info['mail']).first()
             if not user:
-                user = User(username=user_info['mail'], role='student')
-                user.set_password(secrets.token_hex(16))  # Random password for OAuth users
+                # Get student role
+                student_role = Role.query.filter_by(name='student').first()
+                user = User(name=user_info.get('displayName', user_info['mail']), email=user_info['mail'], role_id=student_role.id, password_hash=generate_password_hash(secrets.token_hex(16)))
                 db.session.add(user)
                 db.session.commit()
 
