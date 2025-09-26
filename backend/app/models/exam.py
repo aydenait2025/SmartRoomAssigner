@@ -15,6 +15,18 @@ class Exam(db.Model):
     enrollments = db.relationship('Enrollment', backref='exam', lazy=True)
     room_assignments = db.relationship('RoomAssignment', backref='exam', lazy=True)
 
+    def to_dict(self):
+        """Convert exam to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'course_name': self.course_name,
+            'course_code': self.course_code,
+            'exam_date': self.exam_date.isoformat() if self.exam_date else None,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'created_by': self.created_by
+        }
+
     def __repr__(self):
         return f"<Exam {self.course_code} on {self.exam_date}>"
 

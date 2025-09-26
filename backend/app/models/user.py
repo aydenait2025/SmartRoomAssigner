@@ -35,5 +35,15 @@ class User(UserMixin, db.Model):
         """Check if user has admin role"""
         return self.role.name == 'admin' if self.role else False
 
+    def to_dict(self):
+        """Convert user to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'role': self.role.name if self.role else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
     def __repr__(self):
         return f"<User {self.name} ({self.role.name if self.role else 'no role'})>"
