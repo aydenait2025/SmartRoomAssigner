@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { useToast } from '../../hooks/useToast';
 

@@ -50,6 +50,7 @@ function StudentManagement() {
   const fetchStudents = async (page = 1) => {
     try {
       setLoading(true);
+      // eslint-disable-next-line no-unused-vars
       const response = await axios.get(`/students?page=${page}&per_page=${perPage}`, { withCredentials: true });
       setStudents(response.data.students);
       setCurrentPage(response.data.current_page);

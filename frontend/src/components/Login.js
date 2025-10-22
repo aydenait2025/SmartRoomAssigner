@@ -125,8 +125,20 @@ function Login() {
               </div>
               <p className="text-center text-sm text-gray-600">
                 By clicking on "Sign in now" you agree to
-                <a href="#" className="text-orange-500 hover:underline"> Terms of Service</a> |
-                <a href="#" className="text-orange-500 hover:underline"> Privacy Policy</a>
+                <button
+                  type="button"
+                  className="text-orange-500 hover:underline"
+                  onClick={() => alert('Terms of Service would open here')}
+                >
+                  Terms of Service
+                </button> |
+                <button
+                  type="button"
+                  className="text-orange-500 hover:underline"
+                  onClick={() => alert('Privacy Policy would open here')}
+                >
+                  Privacy Policy
+                </button>
               </p>
             </form>
           </div>

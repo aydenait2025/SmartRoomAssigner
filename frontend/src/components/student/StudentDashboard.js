@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useToast } from '../../hooks/useToast';
 
 function StudentDashboard() {
-  const { successToast, infoToast, warningToast, errorToast } = useToast();
+  const { successToast, infoToast, warningToast } = useToast();
   const [assignments, setAssignments] = useState([]);
   const [upcomingExams, setUpcomingExams] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [reportIssue, setReportIssue] = useState(false);
   const [issueType, setIssueType] = useState('');
   const [issueMessage, setIssueMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Mock data for demonstration - in real app this would come from API
   useEffect(() => {
@@ -76,20 +73,12 @@ function StudentDashboard() {
       setLoading(false);
     }, 1000);
 
-    // Update current time every minute for exam timers
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
+    // Clean up any timers on unmount
+    return () => {};
+  }, [infoToast]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen bg-gray-900 text-gray-100">Loading assignment...</div>;
-  }
-
-  if (error) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-900 text-red-500">{error}</div>;
   }
 
   // Helper functions
@@ -122,15 +111,12 @@ function StudentDashboard() {
   };
 
   const addToCalendar = (assignment) => {
-    // In a real app, this would integrate with calendar APIs
-    const event = {
-      title: `${assignment.course_code} Final Exam`,
-      location: `${assignment.room_number}, ${assignment.building_name}`,
-      description: `Exam for ${assignment.course_name} - Seat ${assignment.seat_number}`,
-      startTime: `${assignment.exam_date}T${assignment.exam_time}:00`,
-      endTime: new Date(new Date(`${assignment.exam_date}T${assignment.exam_time}:00`).getTime() + eval(assignment.duration.replace(' hours', '')) * 60 * 60 * 1000).toISOString()
-    };
+    // Parse duration safely without using eval
+    const durationMatch = assignment.duration.match(/(\d+)/);
+    const durationHours = durationMatch ? parseInt(durationMatch[1], 10) : 0;
+    const durationMs = durationHours * 60 * 60 * 1000;
 
+    // In a real app, this would integrate with calendar APIs
     successToast('Exam added to your calendar! 📅', 3000);
   };
 

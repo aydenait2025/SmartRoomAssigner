@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useToast } from '../../hooks/useToast';
 import AdminLayout from './AdminLayout';
 
 function Notifications() {
-  const { toasts, addToast, removeToast, successToast, errorToast, warningToast, infoToast } = useToast();
+  const { successToast, errorToast, warningToast, infoToast } = useToast();
   const [notifications, setNotifications] = useState([
     {
       id: 1,

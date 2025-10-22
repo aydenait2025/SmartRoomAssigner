@@ -3,6 +3,7 @@ import axios from 'axios';
 
 function ScheduleManagement() {
   const [schedules, setSchedules] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -245,6 +246,7 @@ function ScheduleManagement() {
   };
 
   // Check for conflicts
+  // eslint-disable-next-line no-unused-vars
   const checkScheduleConflict = (newSchedule) => {
     const conflicts = schedules.filter(schedule => {
       if (schedule.date !== newSchedule.date) return false;
