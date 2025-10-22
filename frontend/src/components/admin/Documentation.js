@@ -12,16 +12,39 @@ function Documentation() {
 
   const documentationStructure = [
     {
+      category: '📖 Documentation Hub',
+      icon: '📚',
+      color: 'blue',
+      documents: [
+        {
+          id: 'documentation-analysis',
+          title: 'Documentation Analysis & Plan',
+          description: 'Current documentation status and improvement roadmap',
+          file: 'documentation-analysis.md',
+          tags: ['analysis', 'planning', 'improvement', 'strategy'],
+          available: true
+        },
+        {
+          id: 'product-overview',
+          title: 'Product Overview',
+          description: 'Complete product strategy and market positioning',
+          file: 'product-overview.md',
+          tags: ['product', 'strategy', 'market', 'business'],
+          available: true
+        }
+      ]
+    },
+    {
       category: '🚀 Getting Started',
       icon: '🚀',
-      color: 'blue',
+      color: 'green',
       documents: [
         {
           id: 'getting-started',
           title: 'Quick Start Guide',
           description: 'Get up and running in 5 minutes',
           file: 'getting-started.md',
-          tags: ['beginner', 'setup', 'installation'],
+          tags: ['beginner', 'setup', 'installation', 'quick-start'],
           available: true
         }
       ]
@@ -29,14 +52,22 @@ function Documentation() {
     {
       category: '👥 User Guides',
       icon: '👥',
-      color: 'green',
+      color: 'purple',
       documents: [
         {
           id: 'admin-guide',
           title: 'Administrator Guide',
           description: 'Complete guide for system administrators',
           file: 'user-guides/admin-guide.md',
-          tags: ['admin', 'management', 'comprehensive'],
+          tags: ['admin', 'management', 'comprehensive', 'operations'],
+          available: true
+        },
+        {
+          id: 'student-guide',
+          title: 'Student Portal Guide',
+          description: 'How to use the student interface',
+          file: 'user-guides/student-guide.md',
+          tags: ['student', 'portal', 'usage', 'interface'],
           available: true
         }
       ]
@@ -44,14 +75,14 @@ function Documentation() {
     {
       category: '🔧 Technical Documentation',
       icon: '🔧',
-      color: 'purple',
+      color: 'orange',
       documents: [
         {
           id: 'ux-flow-diagrams',
           title: 'UX Flow Diagrams',
           description: 'User experience flow diagrams and workflow optimization',
           file: 'technical-docs/ux-flow-diagrams.md',
-          tags: ['ux', 'flows', 'diagrams', 'workflows'],
+          tags: ['ux', 'flows', 'diagrams', 'workflows', 'optimization'],
           available: true
         },
         {
@@ -59,7 +90,7 @@ function Documentation() {
           title: 'API Reference',
           description: 'Complete REST API documentation',
           file: 'technical-docs/api-reference.md',
-          tags: ['api', 'rest', 'endpoints', 'integration'],
+          tags: ['api', 'rest', 'endpoints', 'integration', 'development'],
           available: true
         },
         {
@@ -67,7 +98,7 @@ function Documentation() {
           title: 'AI Enhancement Plan',
           description: 'Future AI and machine learning enhancements',
           file: 'technical-docs/ai-enhancement-plan.md',
-          tags: ['ai', 'ml', 'future', 'enhancements'],
+          tags: ['ai', 'ml', 'future', 'enhancements', 'roadmap'],
           available: true
         }
       ]
@@ -75,14 +106,14 @@ function Documentation() {
     {
       category: '📊 System Administration',
       icon: '📊',
-      color: 'orange',
+      color: 'red',
       documents: [
         {
           id: 'troubleshooting',
           title: 'Troubleshooting Guide',
           description: 'Common issues and solutions',
           file: 'admin-docs/troubleshooting.md',
-          tags: ['troubleshooting', 'issues', 'solutions', 'debugging'],
+          tags: ['troubleshooting', 'issues', 'solutions', 'debugging', 'support'],
           available: true
         }
       ]
@@ -97,7 +128,7 @@ function Documentation() {
           title: 'Enterprise Setup Guide',
           description: 'Complete enterprise deployment and configuration',
           file: 'deployment/enterprise-setup.md',
-          tags: ['enterprise', 'deployment', 'production', 'scaling'],
+          tags: ['enterprise', 'deployment', 'production', 'scaling', 'infrastructure'],
           available: true
         }
       ]
