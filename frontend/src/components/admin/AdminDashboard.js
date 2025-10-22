@@ -6,14 +6,14 @@ import AssignmentTab from './AssignmentTab';
 function AdminDashboard() {
   const navigate = useNavigate();
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
-  const [criticalAlerts, setCriticalAlerts] = useState([
+  const [criticalAlerts] = useState([
     {
       id: 1,
       type: 'warning',
       title: '3 exams pending room assignment',
       message: 'Calculus I, Physics II, Chemistry Lab require immediate attention',
       action: 'Assign Now',
-      actionHandler: () => navigate('/admin/assignments'),
+      actionHandler: () => navigate('/admin/assignment-tab'),
       icon: '⚠️',
       urgent: true
     },
@@ -34,7 +34,7 @@ function AdminDashboard() {
       title: 'Room conflict detected',
       message: 'MB-101 is double-booked for 2pm-4pm on Dec 10',
       action: 'Review Conflicts',
-      actionHandler: () => navigate('/admin/assignments'),
+      actionHandler: () => navigate('/admin/assignment-tab'),
       icon: '⚡',
       urgent: false
     }
@@ -136,7 +136,7 @@ function AdminDashboard() {
             <div className="text-green-500 text-2xl">🚪</div>
           </div>
           <button
-            onClick={() => navigate('/admin/rooms')}
+            onClick={() => navigate('/admin/room-management')}
             className="mt-3 text-xs text-green-600 hover:text-green-800 font-medium"
           >
             View Room Status →
@@ -152,7 +152,7 @@ function AdminDashboard() {
             <div className="text-blue-500 text-2xl">📚</div>
           </div>
           <button
-            onClick={() => navigate('/admin/assignments')}
+            onClick={() => navigate('/admin/assignment-tab')}
             className="mt-3 text-xs text-blue-600 hover:text-blue-800 font-medium"
           >
             Manage Exams →
@@ -168,7 +168,7 @@ function AdminDashboard() {
             <div className="text-purple-500 text-2xl">👥</div>
           </div>
           <button
-            onClick={() => navigate('/admin/students')}
+            onClick={() => navigate('/admin/student-management')}
             className="mt-3 text-xs text-purple-600 hover:text-purple-800 font-medium"
           >
             View Students →
@@ -192,7 +192,7 @@ function AdminDashboard() {
               </div>
             </button>
             <button
-              onClick={() => navigate('/admin/assignments')}
+              onClick={() => navigate('/admin/assignment-tab')}
               className="p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors duration-200"
             >
               <div className="text-center">
@@ -202,7 +202,7 @@ function AdminDashboard() {
               </div>
             </button>
             <button
-              onClick={() => navigate('/admin/courses')}
+              onClick={() => navigate('/admin/course-management')}
               className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
             >
               <div className="text-center">

@@ -31,8 +31,10 @@ function BuildingLocator() {
 
     // Wait for DOM to be ready before initializing map
     const timer = setTimeout(() => {
-      initializeMap();
-    }, 100);
+      if (mapRef.current) {
+        initializeMap();
+      }
+    }, 200);
 
     // Cleanup function for Leaflet map and timer
     return () => {
@@ -42,7 +44,7 @@ function BuildingLocator() {
         leafletMapRef.current = null;
       }
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBuildings = async () => {
     try {

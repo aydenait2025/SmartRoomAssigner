@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -11,32 +12,43 @@ import AssignmentTab from './components/admin/AssignmentTab';
 import BuildingLocator from './components/admin/BuildingLocator';
 import ScheduleManagement from './components/admin/ScheduleManagement';
 import Reports from './components/admin/Reports';
+import Notifications from './components/admin/Notifications';
+import HelpSupport from './components/admin/HelpSupport';
+import Settings from './components/admin/Settings';
+import Documentation from './components/admin/Documentation';
 
 // Configure axios to use the API URL from environment variables
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 axios.defaults.withCredentials = true;
 
 function App() {
-  // This is a placeholder for authentication logic.
-  // In a real application, you would check for a token or user session.
+  // Modified to bypass login for demo purposes
   const isAuthenticated = () => {
-    // Check for authentication token
-    return localStorage.getItem('token') !== null;
+    // Auto-set authentication for demo
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('token', 'demo-token');
+      localStorage.setItem('userRole', 'admin');
+    }
+    return true; // Always authenticated for demo
   };
 
   const isAdmin = () => {
-    // Check for admin role
-    return localStorage.getItem('userRole') === 'admin';
+    // Auto-set as admin for demo
+    if (localStorage.getItem('userRole') !== 'admin') {
+      localStorage.setItem('userRole', 'admin');
+    }
+    return true; // Always admin for demo
   };
 
   const isStudent = () => {
-    return localStorage.getItem('userRole') === 'student';
+    return false; // Not student, we're admin for demo
   };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-900 text-gray-100"> {/* Apply dark theme here */}
-        <Routes>
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen bg-gray-900 text-gray-100"> {/* Apply dark theme here */}
+          <Routes>
           <Route path="/login" element={<Login />} />
           
           {/* Student Routes */}
@@ -74,9 +86,25 @@ function App() {
             path="/admin/building-locator" 
             element={isAdmin() ? <BuildingLocator /> : <Navigate to="/login" />} 
           />
-          <Route 
-            path="/admin/reports" 
-            element={isAdmin() ? <Reports /> : <Navigate to="/login" />} 
+          <Route
+            path="/admin/reports"
+            element={isAdmin() ? <Reports /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/notifications"
+            element={isAdmin() ? <Notifications /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/help-support"
+            element={isAdmin() ? <HelpSupport /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/settings"
+            element={isAdmin() ? <Settings /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/documentation"
+            element={isAdmin() ? <Documentation /> : <Navigate to="/login" />}
           />
 
           {/* Default Route */}
@@ -91,8 +119,9 @@ function App() {
             } 
           />
         </Routes>
-      </div>
-    </Router>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

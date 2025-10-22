@@ -53,3 +53,6 @@ __pycache__/
 # Operating System files
 .DS_Store
 Thumbs.db
+
+# Documentation (can be regenerated)
+doc/

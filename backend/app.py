@@ -17,7 +17,13 @@ from authlib.integrations.flask_client import OAuth
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_very_secret_key') # Replace with a strong secret key
+
+# Load configuration from config.py
+from backend.app.config import config
+app.config.from_object(config['development'])
+
+# Override with environment variables if needed
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', app.config.get('SECRET_KEY', 'a_very_secret_key'))
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -30,7 +36,7 @@ CORS(app, supports_credentials=True, origins=[
     "http://172.20.0.1:5000"   # Direct backend access from Docker
 ]) # Enable CORS for credentials
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:password@localhost:5432/smartroomassign')
+# Database URI is now configured in config.py
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager()

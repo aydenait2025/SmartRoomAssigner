@@ -1,6 +1,6 @@
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
-psycopg2-binary==2.9.7
+# psycopg2-binary==2.9.7  # Temporarily disabled for quick testing
 numpy==1.24.3  # Compatible version
 pandas==2.0.3  # Compatible with numpy 1.24.3
 python-dotenv==1.0.0
