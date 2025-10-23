@@ -43,8 +43,8 @@ class TestingConfig(Config):
 
 # Configuration mapping
 config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
-    'default': DevelopmentConfig
+    'development': 'backend.app.config.DevelopmentConfig',
+    'production': 'backend.app.config.ProductionConfig',
+    'testing': 'backend.app.config.TestingConfig',
+    'default': 'backend.app.config.DevelopmentConfig'
 }
