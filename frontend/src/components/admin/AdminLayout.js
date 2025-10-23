@@ -6,6 +6,9 @@ function AdminLayout({ children, title = "Dashboard" }) {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [academicResourcesOpen, setAcademicResourcesOpen] = useState(false);
+  const [facilitiesOpen, setFacilitiesOpen] = useState(false);
+  const [systemOpen, setSystemOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -72,299 +75,100 @@ function AdminLayout({ children, title = "Dashboard" }) {
 
         <nav className="flex-1 p-2">
           <ul className="space-y-0.5">
-            {/* Primary/High-frequency tasks at top */}
+            {/* Dashboard */}
             <li>
               <Link
                 to="/admin/dashboard"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 animate-pulse hover:animate-none rounded-lg`}
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Dashboard</span>
-                )}
+                {/* Icon */}
+                {!sidebarCollapsed && <span className="ml-2 text-sm">Dashboard</span>}
               </Link>
             </li>
+            {/* Assignments */}
             <li>
               <Link
                 to="/admin/assignment-tab"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Assignments</span>
-                )}
+                {/* Icon */}
+                {!sidebarCollapsed && <span className="ml-2 text-sm">Assignments</span>}
               </Link>
             </li>
 
-            {/* Core data management - most frequently used */}
-            <li>
-              <Link
-                to="/admin/student-management"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Academic Resources */}
+            {!sidebarCollapsed && (
+              <li>
+                <button
+                  onClick={() => setAcademicResourcesOpen(!academicResourcesOpen)}
+                  className="flex items-center justify-between w-full p-2 text-white hover:bg-gray-700 rounded-lg"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Students</span>
+                  <span className="text-sm">Academic Resources</span>
+                  {/* Chevron Icon */}
+                </button>
+                {academicResourcesOpen && (
+                  <ul className="pl-4">
+                    <li><Link to="/admin/student-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Students</Link></li>
+                    <li><Link to="/admin/course-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Courses</Link></li>
+                    <li><Link to="/admin/exam-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Exams</Link></li>
+                  </ul>
                 )}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/course-management"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Courses</span>
-                )}
-              </Link>
-            </li>
+              </li>
+            )}
 
-            {/* Infrastructure/facility management - less frequent */}
-            <li>
-              <Link
-                to="/admin/room-management"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Facilities */}
+            {!sidebarCollapsed && (
+              <li>
+                <button
+                  onClick={() => setFacilitiesOpen(!facilitiesOpen)}
+                  className="flex items-center justify-between w-full p-2 text-white hover:bg-gray-700 rounded-lg"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 17V7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 11h12"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Rooms</span>
+                  <span className="text-sm">Facilities</span>
+                  {/* Chevron Icon */}
+                </button>
+                {facilitiesOpen && (
+                  <ul className="pl-4">
+                    <li><Link to="/admin/building-locator" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Buildings</Link></li>
+                    <li><Link to="/admin/room-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Rooms</Link></li>
+                  </ul>
                 )}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/building-locator"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Buildings</span>
-                )}
-              </Link>
-            </li>
+              </li>
+            )}
 
-            {/* Analysis & Reporting */}
+            {/* Reports */}
             <li>
               <Link
                 to="/admin/reports"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Reports</span>
-                )}
+                {/* Icon */}
+                {!sidebarCollapsed && <span className="ml-2 text-sm">Reports</span>}
               </Link>
             </li>
 
             {/* Separator */}
+            {!sidebarCollapsed && <li className="pt-4"><hr className="border-gray-700" /></li>}
+
+            {/* System */}
             {!sidebarCollapsed && (
-              <li className="pt-4">
-                <hr className="border-gray-700" />
+              <li>
+                <button
+                  onClick={() => setSystemOpen(!systemOpen)}
+                  className="flex items-center justify-between w-full p-2 text-white hover:bg-gray-700 rounded-lg"
+                >
+                  <span className="text-sm">System</span>
+                  {/* Chevron Icon */}
+                </button>
+                {systemOpen && (
+                  <ul className="pl-4">
+                    <li><Link to="/admin/notifications" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Notifications</Link></li>
+                    <li><Link to="/admin/settings" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Settings</Link></li>
+                    <li><Link to="/admin/help-support" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Help & Support</Link></li>
+                    <li><Link to="/admin/documentation" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Documentation</Link></li>
+                  </ul>
+                )}
               </li>
             )}
-
-            {/* Additional menu items */}
-            <li>
-              <Link
-                to="/admin/documentation"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Documentation</span>
-                )}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/notifications"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-5 5v-5z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 6.5A6.5 6.5 0 0119.5 13m0 0a6.5 6.5 0 01-6.5 6.5"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Notifications</span>
-                )}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/help-support"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Help & Support</span>
-                )}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/settings"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 hover:scale-105 hover:shadow-lg transform transition-all duration-300 rounded-lg`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                {!sidebarCollapsed && (
-                  <span className="ml-2 text-sm">Settings</span>
-                )}
-              </Link>
-            </li>
           </ul>
         </nav>
 
