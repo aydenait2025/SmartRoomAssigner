@@ -273,6 +273,7 @@ function Settings() {
       case "checkbox":
         return (
           <input
+            id={`checkbox-${setting.key}`}
             type="checkbox"
             checked={setting.value}
             onChange={(e) => handleSettingChange(setting.key, e.target.checked)}
@@ -421,7 +422,10 @@ function Settings() {
                 {setting.type === "checkbox" ? (
                   <div className="flex items-center">
                     {renderSettingInput(setting)}
-                    <label className="ml-2 text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor={`checkbox-${setting.key}`}
+                      className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
+                    >
                       {setting.label}
                     </label>
                   </div>
