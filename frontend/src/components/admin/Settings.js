@@ -252,128 +252,257 @@ function Settings() {
   return (
     <AdminLayout title="Settings">
       {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings Management</h1>
+        <p className="text-gray-600">Configure system preferences, notifications, and administrative options</p>
+      </div>
 
       {/* Settings Content */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-8">
+      <div className="space-y-8">
         {/* General Settings */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            ⚙️ General Settings
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {generalSettings.map((setting) => (
-              <div key={setting.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {setting.label}
-                </label>
-                <div className="max-w-xs">
-                  {renderSettingInput(setting)}
-                </div>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <span className="text-2xl">⚙️</span>
               </div>
-            ))}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">General Settings</h3>
+                <p className="text-sm text-gray-600">Basic configuration and preferences for your application</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {generalSettings.map((setting) => (
+                <div key={setting.key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {setting.label}
+                  </label>
+                  <div className="max-w-xs">
+                    {renderSettingInput(setting)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Notification Settings */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            🔔 Notification Settings
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {notificationSettings.map((setting) => (
-              <div key={setting.key}>
-                {setting.type === "checkbox" ? (
-                  <div className="flex items-center">
-                    {renderSettingInput(setting)}
-                    <label
-                      htmlFor={`checkbox-${setting.key}`}
-                      className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
-                    >
-                      {setting.label}
-                    </label>
-                  </div>
-                ) : setting.type === "select" ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {setting.label}
-                    </label>
-                    <div className="max-w-xs">
-                      {renderSettingInput(setting)}
-                    </div>
-                  </div>
-                ) : null}
+        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <span className="text-xl text-slate-600">🔔</span>
               </div>
-            ))}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                <p className="text-sm text-gray-500">Manage alerts and communication preferences</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 bg-white">
+            <div className="space-y-6">
+              {/* Email Notifications */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">📧</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Email Notifications
+                    </label>
+                    <p className="text-xs text-gray-500">Receive email alerts for important events</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="emailNotifications"
+                    type="checkbox"
+                    checked={settings.emailNotifications}
+                    onChange={(e) => handleSettingChange('emailNotifications', 'emailNotifications', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Push Notifications */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">📱</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Push Notifications
+                    </label>
+                    <p className="text-xs text-gray-500">Browser notifications for real-time updates</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="pushNotifications"
+                    type="checkbox"
+                    checked={settings.pushNotifications}
+                    onChange={(e) => handleSettingChange('pushNotifications', 'pushNotifications', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* SMS Notifications */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">💬</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      SMS Notifications
+                    </label>
+                    <p className="text-xs text-gray-500">Text message alerts for critical notifications</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="smsNotifications"
+                    type="checkbox"
+                    checked={settings.smsNotifications}
+                    onChange={(e) => handleSettingChange('smsNotifications', 'smsNotifications', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Notification Frequency */}
+              <div className="border-t border-gray-100 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">
+                    Frequency
+                  </label>
+                  <p className="text-xs text-gray-500">How often you want to receive notifications</p>
+                  <div className="max-w-xs">
+                    <select
+                      value={settings.notificationFrequency}
+                      onChange={(e) => handleSettingChange('notificationFrequency', 'notificationFrequency', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="immediate">Immediate</option>
+                      <option value="hourly">Hourly Digest</option>
+                      <option value="daily">Daily Digest</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* System Settings */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            🔧 System Settings
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {systemSettings.map((setting) => (
-              <div key={setting.key}>
-                {setting.type === "select" ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {setting.label}
-                    </label>
-                    <div className="max-w-xs">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-violet-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <span className="text-2xl">🔧</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">System Settings</h3>
+                <p className="text-sm text-gray-600">Configure automated processes and system behavior</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {systemSettings.map((setting) => (
+                <div key={setting.key}>
+                  {setting.type === "select" ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {setting.label}
+                      </label>
+                      <div className="max-w-xs">
+                        {renderSettingInput(setting)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">
+                        {setting.label}
+                      </span>
                       {renderSettingInput(setting)}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      {setting.label}
-                    </span>
-                    {renderSettingInput(setting)}
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
 
 
         {/* Security Settings */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            🔒 Security Settings
-          </h3>
-          <div className="grid grid-cols-1 gap-6">
-            {securitySettings.map((setting) => (
-              <div
-                key={setting.key}
-              >
-                {setting.type === "checkbox" ? (
-                  <div className="flex items-center">
-                    {renderSettingInput(setting)}
-                    <label
-                      htmlFor={`checkbox-${setting.key}`}
-                      className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
-                    >
-                      {setting.label}
-                    </label>
-                  </div>
-                ) : setting.type === "button" ? (
-                  <div>
-                    {renderSettingInput(setting)}
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {setting.label}
-                    </label>
-                    {renderSettingInput(setting)}
-                  </div>
-                )}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-red-50 to-rose-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <span className="text-2xl">🔒</span>
               </div>
-            ))}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
+                <p className="text-sm text-gray-600">Manage security features and access controls</p>
+              </div>
+            </div>
           </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 gap-6">
+              {securitySettings.map((setting) => (
+                <div key={setting.key}>
+                  {setting.type === "checkbox" ? (
+                    <div className="flex items-center">
+                      {renderSettingInput(setting)}
+                      <label
+                        htmlFor={`checkbox-${setting.key}`}
+                        className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
+                      >
+                        {setting.label}
+                      </label>
+                    </div>
+                  ) : setting.type === "button" ? (
+                    <div className="flex justify-start">
+                      {renderSettingInput(setting)}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {setting.label}
+                      </label>
+                      {renderSettingInput(setting)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <button
+            onClick={handleResetSettings}
+            className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium"
+          >
+            Reset to Defaults
+          </button>
+          <button
+            onClick={handleSaveSettings}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+          >
+            Save Settings
+          </button>
         </div>
       </div>
 
