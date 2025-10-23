@@ -82,7 +82,9 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
                 {/* Icon */}
-                {!sidebarCollapsed && <span className="ml-2 text-sm">Dashboard</span>}
+                {!sidebarCollapsed && (
+                  <span className="ml-2 text-sm">Dashboard</span>
+                )}
               </Link>
             </li>
             {/* Assignments */}
@@ -92,7 +94,9 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
                 {/* Icon */}
-                {!sidebarCollapsed && <span className="ml-2 text-sm">Assignments</span>}
+                {!sidebarCollapsed && (
+                  <span className="ml-2 text-sm">Assignments</span>
+                )}
               </Link>
             </li>
 
@@ -100,7 +104,9 @@ function AdminLayout({ children, title = "Dashboard" }) {
             {!sidebarCollapsed && (
               <li>
                 <button
-                  onClick={() => setAcademicResourcesOpen(!academicResourcesOpen)}
+                  onClick={() =>
+                    setAcademicResourcesOpen(!academicResourcesOpen)
+                  }
                   className="flex items-center justify-between w-full p-2 text-white hover:bg-gray-700 rounded-lg"
                 >
                   <span className="text-sm">Academic Resources</span>
@@ -108,9 +114,30 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 </button>
                 {academicResourcesOpen && (
                   <ul className="pl-4">
-                    <li><Link to="/admin/student-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Students</Link></li>
-                    <li><Link to="/admin/course-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Courses</Link></li>
-                    <li><Link to="/admin/exam-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Exams</Link></li>
+                    <li>
+                      <Link
+                        to="/admin/student-management"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Students
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/course-management"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Courses
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/exam-management"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Exams
+                      </Link>
+                    </li>
                   </ul>
                 )}
               </li>
@@ -128,8 +155,22 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 </button>
                 {facilitiesOpen && (
                   <ul className="pl-4">
-                    <li><Link to="/admin/building-locator" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Buildings</Link></li>
-                    <li><Link to="/admin/room-management" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Rooms</Link></li>
+                    <li>
+                      <Link
+                        to="/admin/building-locator"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Buildings
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/room-management"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Rooms
+                      </Link>
+                    </li>
                   </ul>
                 )}
               </li>
@@ -142,12 +183,18 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 className={`flex items-center ${sidebarCollapsed ? "justify-center" : ""} p-2 text-white hover:bg-gray-700 hover:text-blue-300 rounded-lg`}
               >
                 {/* Icon */}
-                {!sidebarCollapsed && <span className="ml-2 text-sm">Reports</span>}
+                {!sidebarCollapsed && (
+                  <span className="ml-2 text-sm">Reports</span>
+                )}
               </Link>
             </li>
 
             {/* Separator */}
-            {!sidebarCollapsed && <li className="pt-4"><hr className="border-gray-700" /></li>}
+            {!sidebarCollapsed && (
+              <li className="pt-4">
+                <hr className="border-gray-700" />
+              </li>
+            )}
 
             {/* System */}
             {!sidebarCollapsed && (
@@ -161,10 +208,38 @@ function AdminLayout({ children, title = "Dashboard" }) {
                 </button>
                 {systemOpen && (
                   <ul className="pl-4">
-                    <li><Link to="/admin/notifications" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Notifications</Link></li>
-                    <li><Link to="/admin/settings" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Settings</Link></li>
-                    <li><Link to="/admin/help-support" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Help & Support</Link></li>
-                    <li><Link to="/admin/documentation" className="block p-2 text-white hover:bg-gray-700 rounded-lg">Documentation</Link></li>
+                    <li>
+                      <Link
+                        to="/admin/notifications"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Notifications
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/settings"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Settings
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/help-support"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Help & Support
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/documentation"
+                        className="block p-2 text-white hover:bg-gray-700 rounded-lg"
+                      >
+                        Documentation
+                      </Link>
+                    </li>
                   </ul>
                 )}
               </li>
