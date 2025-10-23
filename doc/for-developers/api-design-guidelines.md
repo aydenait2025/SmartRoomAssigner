@@ -312,8 +312,7 @@ const JWT_STRUCTURE = {
 
 ### **API Key Authentication**
 ```bash
-# 🔧 API Key Header Format
-curl -H "X-API-Key: sk_test_4eC39HqLyjWDarjtT1zdp7dc" \
+
      -H "Content-Type: application/json" \
      https://api.smartroomassigner.com/v1/students
 
