@@ -337,17 +337,12 @@ function Settings() {
           <div className="p-6 bg-white">
             <div className="space-y-6">
               {/* Email Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">📧</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Email Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Receive email alerts for important events</p>
-                  </div>
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                    Email Notifications
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Receive email alerts for important events</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -362,17 +357,12 @@ function Settings() {
               </div>
 
               {/* Push Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">📱</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Push Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Browser notifications for real-time updates</p>
-                  </div>
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                    Push Notifications
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Browser notifications for real-time updates</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -387,17 +377,12 @@ function Settings() {
               </div>
 
               {/* SMS Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">💬</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      SMS Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Text message alerts for critical notifications</p>
-                  </div>
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                    SMS Notifications
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Text message alerts for critical notifications</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
