@@ -15,7 +15,6 @@ function Settings() {
   const [settings, setSettings] = useState({
     // General Settings
     siteName: "SmartRoomAssigner",
-    adminEmail: "admin@university.edu",
     timezone: "America/Toronto",
     language: "en",
     dateFormat: "MM/DD/YYYY",
@@ -58,7 +57,6 @@ function Settings() {
     setSettings({
       // General Settings - all default values
       siteName: "SmartRoomAssigner",
-      adminEmail: "admin@university.edu",
       timezone: "America/Toronto",
       language: "en",
       dateFormat: "MM/DD/YYYY",
@@ -95,12 +93,7 @@ function Settings() {
       type: "text",
       value: settings.siteName,
     },
-    {
-      key: "adminEmail",
-      label: "Admin Email",
-      type: "email",
-      value: settings.adminEmail,
-    },
+
     {
       key: "timezone",
       label: "Timezone",
