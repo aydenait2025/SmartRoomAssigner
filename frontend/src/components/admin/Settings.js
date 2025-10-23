@@ -282,21 +282,26 @@ function Settings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {notificationSettings.map((setting) => (
               <div key={setting.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {setting.label}
-                </label>
-                {setting.type === "select" ? (
-                  <div className="max-w-xs">
+                {setting.type === "checkbox" ? (
+                  <div className="flex items-center">
                     {renderSettingInput(setting)}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor={`checkbox-${setting.key}`}
+                      className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
+                    >
                       {setting.label}
-                    </span>
-                    {renderSettingInput(setting)}
+                    </label>
                   </div>
-                )}
+                ) : setting.type === "select" ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {setting.label}
+                    </label>
+                    <div className="max-w-xs">
+                      {renderSettingInput(setting)}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
