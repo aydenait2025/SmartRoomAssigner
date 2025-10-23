@@ -205,8 +205,6 @@ def init_db_route():
         # Create roles
         roles_data = [
             Role(name='admin'),
-            Role(name='professor'),
-            Role(name='ta'),
             Role(name='student')
         ]
         db.session.add_all(roles_data)
@@ -214,15 +212,11 @@ def init_db_route():
 
         # Get role IDs
         admin_role = Role.query.filter_by(name='admin').first()
-        professor_role = Role.query.filter_by(name='professor').first()
-        ta_role = Role.query.filter_by(name='ta').first()
         student_role = Role.query.filter_by(name='student').first()
 
         # Create sample users with simple passwords for testing
         users_data = [
             User(name='Alice Admin', email='alice@examspace.com', role_id=admin_role.id, password_hash=generate_password_hash('password')),
-            User(name='Dr. Bob', email='bob@university.edu', role_id=professor_role.id, password_hash=generate_password_hash('password')),
-            User(name='Tom TA', email='tom@university.edu', role_id=ta_role.id, password_hash=generate_password_hash('password')),
             User(name='Student Sara', email='sara@student.edu', role_id=student_role.id, password_hash=generate_password_hash('password'))
         ]
         db.session.add_all(users_data)
