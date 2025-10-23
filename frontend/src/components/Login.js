@@ -175,15 +175,15 @@ function Login() {
       {showForgotPassword && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Reset Password</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="text-lg font-bold mb-4 text-black">Reset Password</h3>
+            <p className="text-sm text-gray-700 mb-4">
               Enter your email address and we'll send you a link to reset your
               password.
             </p>
             <input
               type="email"
               placeholder="Enter your email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={forgotPasswordEmail}
               onChange={(e) => setForgotPasswordEmail(e.target.value)}
             />
@@ -201,7 +201,7 @@ function Login() {
                   setForgotPasswordEmail("");
                   setResetMessage("");
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-black hover:text-gray-800"
               >
                 Cancel
               </button>

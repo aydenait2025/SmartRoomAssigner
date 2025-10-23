@@ -19,7 +19,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Load configuration from config.py
-from backend.app.config import config
+from app.config import config
 app.config.from_object(config['development'])
 
 # Override with environment variables if needed
