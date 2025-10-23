@@ -4,7 +4,6 @@ import AdminLayout from "./AdminLayout";
 
 function Settings() {
   const { successToast, infoToast } = useToast();
-  const [activeTab, setActiveTab] = useState("general");
 
   // Change password modal state
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -324,151 +323,124 @@ function Settings() {
         </p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-              activeTab === tab.id
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {/* Settings Content */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-8">
         {/* General Settings */}
-        {activeTab === "general" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              General Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {generalSettings.map((setting) => (
-                <div key={setting.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {setting.label}
-                  </label>
-                  {renderSettingInput(setting)}
-                </div>
-              ))}
-            </div>
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            ⚙️ General Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {generalSettings.map((setting) => (
+              <div key={setting.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {setting.label}
+                </label>
+                {renderSettingInput(setting)}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Notification Settings */}
-        {activeTab === "notifications" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Notification Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {notificationSettings.map((setting) => (
-                <div
-                  key={setting.key}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      {setting.label}
-                    </label>
-                  </div>
-                  {renderSettingInput(setting)}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            🔔 Notification Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {notificationSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className="flex items-center justify-between"
+              >
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    {setting.label}
+                  </label>
                 </div>
-              ))}
-            </div>
+                {renderSettingInput(setting)}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* System Settings */}
-        {activeTab === "system" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              System Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {systemSettings.map((setting) => (
-                <div
-                  key={setting.key}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      {setting.label}
-                    </label>
-                  </div>
-                  {renderSettingInput(setting)}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            🔧 System Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {systemSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className="flex items-center justify-between"
+              >
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    {setting.label}
+                  </label>
                 </div>
-              ))}
-            </div>
+                {renderSettingInput(setting)}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Appearance Settings */}
-        {activeTab === "appearance" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Appearance Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {appearanceSettings.map((setting) => (
-                <div
-                  key={setting.key}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            🎨 Appearance Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {appearanceSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className="flex items-center justify-between"
+              >
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    {setting.label}
+                  </label>
+                </div>
+                {renderSettingInput(setting)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Security Settings */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            🔒 Security Settings
+          </h3>
+          <div className="grid grid-cols-1 gap-6">
+            {securitySettings.map((setting) => (
+              <div
+                key={setting.key}
+              >
+                {setting.type === "checkbox" ? (
+                  <div className="flex items-center">
+                    {renderSettingInput(setting)}
+                    <label className="ml-2 text-sm font-medium text-gray-700">
                       {setting.label}
                     </label>
                   </div>
-                  {renderSettingInput(setting)}
-                </div>
-              ))}
-            </div>
+                ) : setting.type === "button" ? (
+                  <div>
+                    {renderSettingInput(setting)}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {setting.label}
+                    </label>
+                    {renderSettingInput(setting)}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Security Settings */}
-        {activeTab === "security" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Security Settings
-            </h3>
-            <div className="grid grid-cols-1 gap-6">
-              {securitySettings.map((setting) => (
-                <div
-                  key={setting.key}
-                >
-                  {setting.type === "checkbox" ? (
-                    <div className="flex items-center">
-                      {renderSettingInput(setting)}
-                      <label className="ml-2 text-sm font-medium text-gray-700">
-                        {setting.label}
-                      </label>
-                    </div>
-                  ) : setting.type === "button" ? (
-                    <div>
-                      {renderSettingInput(setting)}
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {setting.label}
-                      </label>
-                      {renderSettingInput(setting)}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Change Password Modal */}
