@@ -20,7 +20,7 @@ def create_app(config_class=None):
 
     if config_class is None:
         # Use environment variable for configuration
-        config_name = os.getenv('FLASK_CONFIG', 'backend.app.config.DevelopmentConfig')
+        config_name = os.getenv('FLASK_CONFIG', 'app.config.DevelopmentConfig')
         app.config.from_object(config_name)
     else:
         # Use provided config class directly

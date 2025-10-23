@@ -1,42 +1,19 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_DB: smartroomassign
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      # Optional: Initialize with enterprise schema
-      # POSTGRES_DB_SCHEMA: /docker-entrypoint-initdb.d/enterprise_schema.sql
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      # Optional: Uncomment to auto-initialize with enterprise schema
-      # - ./db/ultimate_enterprise_schema.sql:/docker-entrypoint-initdb.d/01-enterprise-schema.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d smartroomassign"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - smartroomassign
-
   backend:
     build: ./backend
     ports:
       - "5000:5000"
     environment:
+      FLASK_APP: app:create_app
+      FLASK_DEBUG: "1"
       FLASK_ENV: development
-      DATABASE_URL: postgresql://user:password@db:5432/smartroomassign
+      DATABASE_URL: postgresql://neondb_owner:npg_9YDSdm4cfVvQ@ep-jolly-credit-ahjpey1h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       PYTHONPATH: /app
       # Add new data paths for configuration
       DATA_RAW_DIR: /app/data/raw
       DATA_PROCESSED_DIR: /app/data/processed
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
       - ./backend:/app
       # Mount data directories for file operations if needed
@@ -81,10 +58,6 @@ services:
   #   networks:
   #     - smartroomassign
   #   command: python utils/scrape_buildings.py
-
-volumes:
-  db_data:
-    driver: local
 
 networks:
   smartroomassign:
