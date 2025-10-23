@@ -4,45 +4,96 @@
 
 This guide covers the most frequently encountered issues and their solutions.
 
-## 🚀 Installation Issues
+## 🚀 **Installation Issues Decision Tree**
 
-### Node.js Dependencies Fail to Install
-**Problem**: npm install fails with dependency conflicts
+### **Installation Problem Diagnosis**
+```mermaid
+flowchart TD
+    A[Installation Failed] --> B{Which service failed?}
 
-**Solutions**:
-1. Clear npm cache:
-   ```bash
-   npm cache clean --force
-   ```
+    B -->|Frontend/Node.js| C[Node.js Issues]
+    B -->|Backend/Python| D[Python Issues]
+    B -->|Database/Docker| E[Database Issues]
 
-2. Delete node_modules and reinstall:
-   ```bash
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
+    C --> F{Error type?}
+    D --> G{Error type?}
+    E --> H{Error type?}
 
-3. Use npm ci instead of npm install:
-   ```bash
-   npm ci
-   ```
+    F -->|Dependency Error| I[Clear cache + reinstall]
+    F -->|Port Conflict| J[Change port or kill process]
+    F -->|Version Conflict| K[Check Node/npm versions]
 
-### Python Dependencies Fail to Install
-**Problem**: pip install fails, especially with psycopg2
+    I --> L[SUCCESS]
+    J --> L
+    K --> L
 
-**Solutions**:
-1. Install system dependencies:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install python3-dev libpq-dev
+    G -->|Module Import| M[Install system packages]
+    G -->|Pip Conflict| N[Use virtual environment]
+    G -->|Permission| O[Use pip with --user]
 
-   # macOS
-   brew install postgresql
-   ```
+    M --> L
+    N --> L
+    O --> L
 
-2. Use pre-compiled wheels:
-   ```bash
-   pip install --only-binary=all psycopg2-binary
-   ```
+    H -->|Port Occupied| P[Change port mapping]
+    H -->|Volume Issue| Q[Fix filesystem permissions]
+    H -->|Image Pull| R[Check internet + registry]
+
+    P --> L
+    Q --> L
+    R --> L
+```
+
+### **Step-by-Step: Node.js Dependencies Failure**
+```mermaid
+graph TD
+    A[npm install failed] --> B[Identify error type]
+    B --> C{Cache/lock issue?}
+
+    C -->|Yes| D[npm cache clean --force]
+    C -->|No| E{Network/proxy issue?}
+
+    D --> F[Delete node_modules/ + lock files]
+    E -->|Yes| G[Configure proxy settings]
+    E -->|No| H{Version conflict?}
+
+    F --> I[npm install fresh]
+    G --> I
+    H -->|Yes| J[Check Node/npm compatibility]
+
+    I --> K[SUCCESS]
+    J --> I
+```
+
+### **Advanced: Python Virtual Environment Setup**
+```mermaid
+graph TD
+    A[Python issues detected] --> B{Current setup?}
+
+    B -->|No virtual env| C[Create new environment]
+    B -->|Existing virtual env| D{Activated correctly?}
+
+    C --> E[python -m venv venv]
+    D -->|No| F{OS Check}
+    D -->|Yes| G[Check packages]
+
+    F -->|Windows| H[venv\\Scripts\\activate.bat]
+    F -->|macOS/Linux| I[source venv/bin/activate]
+
+    H --> J[Install requirements]
+    I --> J
+    G --> J
+
+    J --> K{Installation success?}
+    K -->|No| L{Package conflicts?}
+    K -->|Yes| M[SUCCESS]
+
+    L -->|Yes| N[pip install --upgrade conflicting_pkg]
+    L -->|No| O[Check Python version compatibility]
+
+    N --> J
+    O --> J
+```
 
 ## 🔐 Authentication Issues
 

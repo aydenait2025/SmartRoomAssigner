@@ -4,30 +4,122 @@
 
 This guide will help you navigate and use the student features of the SmartRoomAssigner system effectively.
 
-## 🎯 Quick Start
+## 🎯 Quick Start Guide
 
-### 1. Access Your Dashboard
-- Navigate to the student portal
-- Login with your student credentials
-- View your personalized dashboard
+### **Step 1: Login & Access Dashboard**
+```
+🌐 Open your browser to: http://localhost:3000
+👤 Login with your student credentials
+📱 Dashboard loads automatically
+```
 
-### 2. Check Your Assignments
-- View all your upcoming exam assignments
-- See room locations and times
-- Get directions to your exam rooms
+#### **Student Dashboard Screenshot**
+```
++----------------------------------------------------+
+|  ↑ [SR] SmartRoom Assignments        ⌘ Report Issue |
++----------------------------------------------------+
+|                                                    |
+|  📅 Upcoming Exams                                  |
+|  ┌─────────────────────────────────────────────┐   |
+|  | ⏰ High Priority Alert                     |   |
+|  | CS301 Final Exam tomorrow at 9:00 AM        |   |
+|  | Room: MB-101, Seat: A5                       |   |
+|  └─────────────────────────────────────────────┘   |
+|                                                    |
+|  Your Exam Assignments                            |
+|  ┌─────────────────────────────────────────────┐   |
+|  | 🏫 CS301 - Computer Science III              |   |
+|  |    Dr. Smith                                  |   |
+|  |    📅 Dec 10, 2025  🕢 09:00 (3 hours)        |   |
+|  |    🏢 MB-101, Main Building - Seat A5         |   |
+|  |    ⏱️ 1d 2h remaining                          |   |
+|  |    📅 Add to Calendar      🗺️ Directions       |   |
+|  └─────────────────────────────────────────────┘   |
++----------------------------------------------------+
+```
 
-### 3. Get Help When Needed
-- Contact TAs for room location help
-- Report issues or special needs
-- Access campus navigation assistance
+### **Step 2: Check Your Assignments**
+- ✅ View all scheduled exam assignments
+- ✅ Note your **room number, building, and seat**
+- ✅ Check exam date, time, and duration
+- ✅ Use "Directions" button for campus navigation
+- ✅ Add exams to your personal calendar
 
-## 📋 Dashboard Overview
+### **Step 3: Get Help When Needed**
+- 📞 Contact Teaching Assistants for immediate support
+- 🐛 Report issues through the in-app reporting system
+- 🗺️ Access interactive campus maps and directions
+- 📧 Email support for non-urgent matters
 
-Your student dashboard shows:
-- **Upcoming Exams**: Next 7 days of scheduled exams
-- **Room Assignments**: Your assigned room and seat number
-- **Building Locations**: Interactive map with your exam locations
-- **Important Notices**: System announcements and updates
+## 📋 Student Dashboard Features
+
+### **📅 Upcoming Exams Section**
+Shows time-sensitive alerts and reminders:
+
+| **Alert Type** | **Color** | **Example** |
+|----------------|-----------|-------------|
+| High Priority | 🔴 Red | Final exams within 24 hours |
+| Medium Priority | 🟡 Yellow | Exams within 3-7 days |
+| Low Priority | 🔵 Blue | General reminders |
+
+### **🏫 Exam Assignments Card**
+Detailed view of your room assignments:
+
+```
+📚 Course Information
+├── Course Code & Name
+├── Instructor Name
+└── Course Description
+
+📅 Exam Details
+├── Date & Time
+├── Duration
+└── Special Instructions
+
+🏢 Location Information
+├── Building Name & Code
+├── Room Number
+├── Floor Level
+└── Seat Assignment
+
+⏱️ Countdown Timer
+└── Days/Hours until exam
+```
+
+### Student Experience Flow Diagram
+```mermaid
+graph TD
+    A[Student Logs In] --> B[View Dashboard]
+    B --> C{Check Upcoming Exams}
+    C --> D[Time-Sensitive Alerts]
+    C --> E[Assignment Details]
+
+    D --> F{Within 24 Hours?}
+    F -->|Yes| G[🔴 High Priority Alert]
+    F -->|No| H[🟡 Medium Priority Alert]
+
+    E --> I[📚 Course Information]
+    I --> J[📅 Exam Date & Time]
+    J --> K[🏢 Room & Building Details]
+    K --> L[💺 Seat Assignment]
+
+    L --> M[Quick Actions]
+    M --> N[📅 Add to Calendar]
+    M --> O[🗺️ Get Directions]
+    M --> P[🐛 Report Issue]
+
+    G --> Q[Arrive Early]
+    H --> Q
+    N --> Q
+    O --> Q
+    P --> R[Support Response]
+    R --> S[Problem Resolved]
+
+    Q --> T[Find Exam Room]
+    T --> U[Enter Building]
+    U --> V[Locate Seat]
+    V --> W[Take Exam]
+```
 
 ## 🗺️ Finding Your Exam Room
 

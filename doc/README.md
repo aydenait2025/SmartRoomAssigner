@@ -17,6 +17,7 @@ Welcome to the comprehensive documentation center for the SmartRoomAssigner syst
 - **API Guide** - Developer integration guide
 
 ### 🔧 [Technical Documentation](./technical-docs/)
+- **[Database Architecture Complete](./technical-docs/database-architecture-complete.md)** - Enterprise-grade schema (47 tables)
 - **Architecture Overview** - System design and components
 - **Database Schema** - Data models and relationships
 - **API Reference** - Complete API documentation
@@ -62,6 +63,9 @@ Use the search feature in the top navigation to find specific information across
 
 ## 🆕 What's New
 
+- **v2.2.0**: 🎯 **Database Architecture Complete** - 47 enterprise-grade tables deployed
+- **MFA Security**: Complete multi-factor authentication with 6 specialized tables
+- **[Database Documentation](./technical-docs/database-architecture-complete.md)**: Enterprise schema assessment (98/100)
 - **v2.1.0**: Enhanced notification system, improved UI, better error handling
 - **v2.0.0**: Complete rewrite with React frontend and Flask backend
 - **v1.5.0**: Added building locator with interactive maps
