@@ -21,6 +21,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:ci": "react-scripts test --ci --watchAll=false --coverage",
+    "test:e2e:ci": "echo 'E2E tests not yet implemented - skipping'",
     "eject": "react-scripts eject",
     "lint": "eslint src",
     "format": "prettier --write src",
