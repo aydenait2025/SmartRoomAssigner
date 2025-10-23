@@ -471,12 +471,6 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     name = data.get('name', '').strip()
-    role_name = data.get('role', 'student').strip().lower()
-
-    # Additional fields for students
-    first_name = data.get('first_name', '').strip()
-    last_name = data.get('last_name', '').strip()
-    student_number = data.get('student_number', '').strip()
 
     # Validation
     if not all([email, password, name]):
@@ -490,17 +484,6 @@ def register():
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters long"}), 400
 
-    # Role validation
-    if role_name not in ['admin', 'student']:
-        return jsonify({"error": "Invalid role. Must be 'admin' or 'student'"}), 400
-
-    # Additional validation for students
-    if role_name == 'student':
-        if not all([first_name, last_name, student_number]):
-            return jsonify({"error": "First name, last name, and student number are required for students"}), 400
-        if len(student_number) < 3:
-            return jsonify({"error": "Student number must be at least 3 characters"}), 400
-
     with app.app_context():
         try:
             # Check if email already exists
@@ -508,18 +491,12 @@ def register():
             if existing_user:
                 return jsonify({"error": "Email already registered"}), 409
 
-            # Check if student number exists (for students)
-            if role_name == 'student':
-                existing_student = Student.query.filter_by(student_number=student_number).first()
-                if existing_student:
-                    return jsonify({"error": "Student number already exists"}), 409
-
-            # Get role
-            role_obj = Role.query.filter_by(name=role_name).first()
+            # All users registering via this endpoint are students by default
+            role_obj = Role.query.filter_by(name='student').first()
             if not role_obj:
-                return jsonify({"error": f"Role '{role_name}' not found in database"}), 500
+                return jsonify({"error": "Student role not found in database"}), 500
 
-            # Create user
+            # Create user as student
             new_user = User(
                 name=name,
                 email=email,
@@ -529,15 +506,17 @@ def register():
             db.session.add(new_user)
             db.session.flush()  # Get the user ID
 
-            # Create student profile if role is student
-            if role_name == 'student':
-                student = Student(
-                    first_name=first_name,
-                    last_name=last_name,
-                    student_number=student_number,
-                    student_id=email  # Use email as student ID
-                )
-                db.session.add(student)
+            # Generate a basic student number from the user ID
+            student_number = f"STU{new_user.id:04d}"
+
+            # Create student profile
+            student = Student(
+                first_name=name.split()[0] if ' ' in name else name,  # First word as first name
+                last_name=' '.join(name.split()[1:]) if ' ' in name else '',  # Rest as last name
+                student_number=student_number,
+                student_id=email
+            )
+            db.session.add(student)
 
             db.session.commit()
 
@@ -547,7 +526,7 @@ def register():
                     "id": new_user.id,
                     "name": new_user.name,
                     "email": new_user.email,
-                    "role": role_name
+                    "role": "student"
                 }
             }), 201
 

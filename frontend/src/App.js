@@ -29,26 +29,17 @@ axios.defaults.baseURL =
 axios.defaults.withCredentials = true;
 
 function App() {
-  // Modified to bypass login for demo purposes
+  // Proper authentication checks
   const isAuthenticated = () => {
-    // Auto-set authentication for demo
-    if (!localStorage.getItem("token")) {
-      localStorage.setItem("token", "demo-token");
-      localStorage.setItem("userRole", "admin");
-    }
-    return true; // Always authenticated for demo
+    return !!localStorage.getItem("token");
   };
 
   const isAdmin = () => {
-    // Auto-set as admin for demo
-    if (localStorage.getItem("userRole") !== "admin") {
-      localStorage.setItem("userRole", "admin");
-    }
-    return true; // Always admin for demo
+    return localStorage.getItem("userRole") === "admin";
   };
 
   const isStudent = () => {
-    return false; // Not student, we're admin for demo
+    return localStorage.getItem("userRole") === "student";
   };
 
   return (

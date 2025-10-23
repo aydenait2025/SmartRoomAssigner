@@ -12,11 +12,7 @@ function Signup() {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    role: "student",
-    firstName: "",
-    lastName: "",
-    studentNumber: ""
+    confirmPassword: ""
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -60,29 +56,14 @@ function Signup() {
       return;
     }
 
-    if (formData.role === "student") {
-      if (!formData.firstName.trim()) {
-        setError("First name is required for students");
-        return;
-      }
-      if (!formData.lastName.trim()) {
-        setError("Last name is required for students");
-        return;
-      }
-      if (!formData.studentNumber.trim()) {
-        setError("Student number is required for students");
-        return;
-      }
-      if (formData.studentNumber.length < 3) {
-        setError("Student number must be at least 3 characters");
-        return;
-      }
-    }
-
     try {
       const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-      const response = await axios.post(`${apiUrl}/register`, formData, {
+      const response = await axios.post(`${apiUrl}/register`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      }, {
         withCredentials: true
       });
 
@@ -192,89 +173,7 @@ function Signup() {
                 />
               </div>
 
-              {/* Role Selection */}
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  I want to register as:
-                </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="student"
-                      checked={formData.role === "student"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Student</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={formData.role === "admin"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Administrator</span>
-                  </label>
-                </div>
-              </div>
 
-              {/* Student-specific fields */}
-              {formData.role === "student" && (
-                <>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="firstName">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="Enter your first name"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lastName">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="Enter your last name"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="studentNumber">
-                      Student Number
-                    </label>
-                    <input
-                      type="text"
-                      id="studentNumber"
-                      name="studentNumber"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      placeholder="Enter your student number"
-                      value={formData.studentNumber}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </>
-              )}
 
               {error && (
                 <p className="text-red-500 text-xs italic mb-4">{error}</p>
