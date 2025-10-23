@@ -31,11 +31,7 @@ function Settings() {
     backupFrequency: "daily",
     sessionTimeout: "30",
 
-    // Appearance Settings
-    theme: "light",
-    sidebarCollapsed: false,
-    itemsPerPage: "10",
-    dateFormat: "MM/DD/YYYY",
+
 
     // Security Settings
     twoFactorAuth: false,
@@ -69,10 +65,6 @@ function Settings() {
       conflictDetection: true,
       backupFrequency: "daily",
       sessionTimeout: "30",
-      theme: "light",
-      sidebarCollapsed: false,
-      itemsPerPage: "10",
-      dateFormat: "MM/DD/YYYY",
       twoFactorAuth: false,
     });
     successToast("Settings reset to defaults");
@@ -186,48 +178,6 @@ function Settings() {
     },
   ];
 
-  const appearanceSettings = [
-    {
-      key: "theme",
-      label: "Theme",
-      type: "select",
-      value: settings.theme,
-      options: [
-        { value: "light", label: "Light" },
-        { value: "dark", label: "Dark" },
-        { value: "auto", label: "Auto" },
-      ],
-    },
-    {
-      key: "sidebarCollapsed",
-      label: "Collapse Sidebar by Default",
-      type: "checkbox",
-      value: settings.sidebarCollapsed,
-    },
-    {
-      key: "itemsPerPage",
-      label: "Items per Page",
-      type: "select",
-      value: settings.itemsPerPage,
-      options: [
-        { value: "10", label: "10" },
-        { value: "25", label: "25" },
-        { value: "50", label: "50" },
-        { value: "100", label: "100" },
-      ],
-    },
-    {
-      key: "dateFormat",
-      label: "Date Format",
-      type: "select",
-      value: settings.dateFormat,
-      options: [
-        { value: "MM/DD/YYYY", label: "MM/DD/YYYY" },
-        { value: "DD/MM/YYYY", label: "DD/MM/YYYY" },
-        { value: "YYYY-MM-DD", label: "YYYY-MM-DD" },
-      ],
-    },
-  ];
 
   const securitySettings = [
     {
@@ -308,7 +258,6 @@ function Settings() {
     { id: "general", label: "⚙️ General", icon: "⚙️" },
     { id: "notifications", label: "🔔 Notifications", icon: "🔔" },
     { id: "system", label: "🔧 System", icon: "🔧" },
-    { id: "appearance", label: "🎨 Appearance", icon: "🎨" },
     { id: "security", label: "🔒 Security", icon: "🔒" },
   ];
 
@@ -387,27 +336,7 @@ function Settings() {
           </div>
         </div>
 
-        {/* Appearance Settings */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            🎨 Appearance Settings
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {appearanceSettings.map((setting) => (
-              <div
-                key={setting.key}
-                className="flex items-center justify-between"
-              >
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    {setting.label}
-                  </label>
-                </div>
-                {renderSettingInput(setting)}
-              </div>
-            ))}
-          </div>
-        </div>
+
 
         {/* Security Settings */}
         <div className="space-y-6">
