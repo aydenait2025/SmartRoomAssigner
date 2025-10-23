@@ -476,7 +476,7 @@ graph TD
     end
 
     subgraph "Performance Optimizations"
-        M[Priority Queues] --> N[O(log n) insertions]
+        M[Priority Queues] --> N[O_log_n insertions]
         O[Bloom Filters] --> P[Fast set membership]
         Q[Spatial Indexing] --> R[Geographic optimization]
         S[Parallel Processing] --> T[Multi-core utilization]
