@@ -447,15 +447,15 @@ def import_buildings():
             testing_capacity = room_capacity * 2
 
             for room_num in range(1, num_rooms + 1):
-                    room = Room(
-                        building_id=building.id,
-                        room_number=str(room_num).zfill(3),
-                        capacity=room_capacity,
-                        allowed=True
-                    )
-                    db.session.add(room)
-                    rooms_added += 1
-                imported_count += 1
+                room = Room(
+                    building_id=building.id,
+                    room_number=str(room_num).zfill(3),
+                    capacity=room_capacity,
+                    allowed=True
+                )
+                db.session.add(room)
+                rooms_added += 1
+            imported_count += 1
             db.session.commit()
 
         return jsonify({
