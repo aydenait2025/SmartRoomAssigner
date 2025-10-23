@@ -6,6 +6,12 @@ function Settings() {
   const { successToast, infoToast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
 
+  // Change password modal state
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   // Settings state
   const [settings, setSettings] = useState({
     // General Settings
@@ -33,7 +39,6 @@ function Settings() {
     dateFormat: "MM/DD/YYYY",
 
     // Security Settings
-    passwordExpiry: "90",
     twoFactorAuth: false,
     loginAttempts: "5",
     ipWhitelist: "",
@@ -71,7 +76,6 @@ function Settings() {
       sidebarCollapsed: false,
       itemsPerPage: "10",
       dateFormat: "MM/DD/YYYY",
-      passwordExpiry: "90",
       twoFactorAuth: false,
       loginAttempts: "5",
       ipWhitelist: "",
@@ -232,16 +236,10 @@ function Settings() {
 
   const securitySettings = [
     {
-      key: "passwordExpiry",
-      label: "Password Expiry (days)",
-      type: "select",
-      value: settings.passwordExpiry,
-      options: [
-        { value: "30", label: "30 days" },
-        { value: "60", label: "60 days" },
-        { value: "90", label: "90 days" },
-        { value: "never", label: "Never" },
-      ],
+      key: "changePassword",
+      label: "Change Password",
+      type: "button",
+      value: "Change Password",
     },
     {
       key: "twoFactorAuth",
@@ -313,6 +311,15 @@ function Settings() {
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+        );
+      case "button":
+        return (
+          <button
+            onClick={() => setShowChangePasswordModal(true)}
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-200"
+          >
+            {setting.value}
+          </button>
         );
       default:
         return null;
@@ -505,6 +512,161 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4 text-black">Change Password</h3>
+            <p className="text-sm text-gray-700 mb-4">
+              Enter your current password and choose a new password.
+            </p>
+
+            {/* Current Password */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => document.querySelector('input[placeholder="Enter current password"]').type = document.querySelector('input[placeholder="Enter current password"]').type === 'password' ? 'text' : 'password'}
+                >
+                  <svg className="h-5 w-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Enter new password (6+ characters)"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => document.querySelector('input[placeholder="Enter new password (6+ characters)"]').type = document.querySelector('input[placeholder="Enter new password (6+ characters)"]').type === 'password' ? 'text' : 'password'}
+                >
+                  <svg className="h-5 w-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm New Password */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => document.querySelector('input[placeholder="Confirm new password"]').type = document.querySelector('input[placeholder="Confirm new password"]').type === 'password' ? 'text' : 'password'}
+                >
+                  <svg className="h-5 w-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowChangePasswordModal(false);
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmNewPassword("");
+                }}
+                className="px-4 py-2 text-black hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  // Validation
+                  if (!currentPassword || !newPassword || !confirmNewPassword) {
+                    infoToast("Please fill in all fields");
+                    return;
+                  }
+
+                  if (newPassword.length < 6) {
+                    infoToast("New password must be at least 6 characters long");
+                    return;
+                  }
+
+                  if (newPassword !== confirmNewPassword) {
+                    infoToast("New passwords do not match");
+                    return;
+                  }
+
+                  // Call the backend API to change password
+                  try {
+                    const response = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/change-password`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                      }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                      successToast("Password changed successfully!");
+                      setShowChangePasswordModal(false);
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmNewPassword("");
+                    } else {
+                      infoToast(data.error || "Failed to change password");
+                    }
+                  } catch (error) {
+                    infoToast("Network error. Please try again.");
+                  }
+                }}
+                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* System Information */}
       <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">

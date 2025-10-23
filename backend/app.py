@@ -572,6 +572,30 @@ def logout():
     # Note: Frontend will handle clearing localStorage on logout
     return jsonify({"message": "Logged out successfully"}), 200
 
+@app.route('/change-password', methods=['POST'])
+@login_required
+def change_password():
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not current_password or not new_password:
+        return jsonify({"error": "Current password and new password are required"}), 400
+
+    # Verify current password
+    if not current_user.check_password(current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+
+    # Validate new password
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters long"}), 400
+
+    # Update password
+    current_user.set_password(new_password)
+    db.session.commit()
+
+    return jsonify({"message": "Password changed successfully"}), 200
+
 @app.route('/current_user')
 @login_required
 def get_current_user():
