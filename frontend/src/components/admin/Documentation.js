@@ -1,138 +1,151 @@
-import React, { useState } from 'react';
-import AdminLayout from './AdminLayout';
-import { useToast } from '../../hooks/useToast';
+import React, { useState } from "react";
+import AdminLayout from "./AdminLayout";
+import { useToast } from "../../hooks/useToast";
 
 function Documentation() {
   const { infoToast } = useToast();
-  const [activeView, setActiveView] = useState('hub'); // 'hub' or 'viewer'
+  const [activeView, setActiveView] = useState("hub"); // 'hub' or 'viewer'
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [content, setContent] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
   const documentationStructure = [
     {
-      category: '📖 Documentation Hub',
-      icon: '📚',
-      color: 'blue',
+      category: "📖 Documentation Hub",
+      icon: "📚",
+      color: "blue",
       documents: [
         {
-          id: 'documentation-analysis',
-          title: 'Documentation Analysis & Plan',
-          description: 'Current documentation status and improvement roadmap',
-          file: 'documentation-analysis.md',
-          tags: ['analysis', 'planning', 'improvement', 'strategy'],
-          available: true
+          id: "documentation-analysis",
+          title: "Documentation Analysis & Plan",
+          description: "Current documentation status and improvement roadmap",
+          file: "documentation-analysis.md",
+          tags: ["analysis", "planning", "improvement", "strategy"],
+          available: true,
         },
         {
-          id: 'product-overview',
-          title: 'Product Overview',
-          description: 'Complete product strategy and market positioning',
-          file: 'product-overview.md',
-          tags: ['product', 'strategy', 'market', 'business'],
-          available: true
-        }
-      ]
+          id: "product-overview",
+          title: "Product Overview",
+          description: "Complete product strategy and market positioning",
+          file: "product-overview.md",
+          tags: ["product", "strategy", "market", "business"],
+          available: true,
+        },
+      ],
     },
     {
-      category: '🚀 Getting Started',
-      icon: '🚀',
-      color: 'green',
+      category: "🚀 Getting Started",
+      icon: "🚀",
+      color: "green",
       documents: [
         {
-          id: 'getting-started',
-          title: 'Quick Start Guide',
-          description: 'Get up and running in 5 minutes',
-          file: 'getting-started.md',
-          tags: ['beginner', 'setup', 'installation', 'quick-start'],
-          available: true
-        }
-      ]
+          id: "getting-started",
+          title: "Quick Start Guide",
+          description: "Get up and running in 5 minutes",
+          file: "getting-started.md",
+          tags: ["beginner", "setup", "installation", "quick-start"],
+          available: true,
+        },
+      ],
     },
     {
-      category: '👥 User Guides',
-      icon: '👥',
-      color: 'purple',
+      category: "👥 User Guides",
+      icon: "👥",
+      color: "purple",
       documents: [
         {
-          id: 'admin-guide',
-          title: 'Administrator Guide',
-          description: 'Complete guide for system administrators',
-          file: 'user-guides/admin-guide.md',
-          tags: ['admin', 'management', 'comprehensive', 'operations'],
-          available: true
+          id: "admin-guide",
+          title: "Administrator Guide",
+          description: "Complete guide for system administrators",
+          file: "user-guides/admin-guide.md",
+          tags: ["admin", "management", "comprehensive", "operations"],
+          available: true,
         },
         {
-          id: 'student-guide',
-          title: 'Student Portal Guide',
-          description: 'How to use the student interface',
-          file: 'user-guides/student-guide.md',
-          tags: ['student', 'portal', 'usage', 'interface'],
-          available: true
-        }
-      ]
+          id: "student-guide",
+          title: "Student Portal Guide",
+          description: "How to use the student interface",
+          file: "user-guides/student-guide.md",
+          tags: ["student", "portal", "usage", "interface"],
+          available: true,
+        },
+      ],
     },
     {
-      category: '🔧 Technical Documentation',
-      icon: '🔧',
-      color: 'orange',
+      category: "🔧 Technical Documentation",
+      icon: "🔧",
+      color: "orange",
       documents: [
         {
-          id: 'ux-flow-diagrams',
-          title: 'UX Flow Diagrams',
-          description: 'User experience flow diagrams and workflow optimization',
-          file: 'technical-docs/ux-flow-diagrams.md',
-          tags: ['ux', 'flows', 'diagrams', 'workflows', 'optimization'],
-          available: true
+          id: "ux-flow-diagrams",
+          title: "UX Flow Diagrams",
+          description:
+            "User experience flow diagrams and workflow optimization",
+          file: "technical-docs/ux-flow-diagrams.md",
+          tags: ["ux", "flows", "diagrams", "workflows", "optimization"],
+          available: true,
         },
         {
-          id: 'api-reference',
-          title: 'API Reference',
-          description: 'Complete REST API documentation',
-          file: 'technical-docs/api-reference.md',
-          tags: ['api', 'rest', 'endpoints', 'integration', 'development'],
-          available: true
+          id: "api-reference",
+          title: "API Reference",
+          description: "Complete REST API documentation",
+          file: "technical-docs/api-reference.md",
+          tags: ["api", "rest", "endpoints", "integration", "development"],
+          available: true,
         },
         {
-          id: 'ai-enhancement-plan',
-          title: 'AI Enhancement Plan',
-          description: 'Future AI and machine learning enhancements',
-          file: 'technical-docs/ai-enhancement-plan.md',
-          tags: ['ai', 'ml', 'future', 'enhancements', 'roadmap'],
-          available: true
-        }
-      ]
+          id: "ai-enhancement-plan",
+          title: "AI Enhancement Plan",
+          description: "Future AI and machine learning enhancements",
+          file: "technical-docs/ai-enhancement-plan.md",
+          tags: ["ai", "ml", "future", "enhancements", "roadmap"],
+          available: true,
+        },
+      ],
     },
     {
-      category: '📊 System Administration',
-      icon: '📊',
-      color: 'red',
+      category: "📊 System Administration",
+      icon: "📊",
+      color: "red",
       documents: [
         {
-          id: 'troubleshooting',
-          title: 'Troubleshooting Guide',
-          description: 'Common issues and solutions',
-          file: 'admin-docs/troubleshooting.md',
-          tags: ['troubleshooting', 'issues', 'solutions', 'debugging', 'support'],
-          available: true
-        }
-      ]
+          id: "troubleshooting",
+          title: "Troubleshooting Guide",
+          description: "Common issues and solutions",
+          file: "admin-docs/troubleshooting.md",
+          tags: [
+            "troubleshooting",
+            "issues",
+            "solutions",
+            "debugging",
+            "support",
+          ],
+          available: true,
+        },
+      ],
     },
     {
-      category: '🚢 Deployment',
-      icon: '🚢',
-      color: 'teal',
+      category: "🚢 Deployment",
+      icon: "🚢",
+      color: "teal",
       documents: [
         {
-          id: 'enterprise-setup',
-          title: 'Enterprise Setup Guide',
-          description: 'Complete enterprise deployment and configuration',
-          file: 'deployment/enterprise-setup.md',
-          tags: ['enterprise', 'deployment', 'production', 'scaling', 'infrastructure'],
-          available: true
-        }
-      ]
-    }
+          id: "enterprise-setup",
+          title: "Enterprise Setup Guide",
+          description: "Complete enterprise deployment and configuration",
+          file: "deployment/enterprise-setup.md",
+          tags: [
+            "enterprise",
+            "deployment",
+            "production",
+            "scaling",
+            "infrastructure",
+          ],
+          available: true,
+        },
+      ],
+    },
   ];
 
   const loadDocument = async (doc) => {
@@ -144,9 +157,9 @@ function Documentation() {
       // For demo, we'll simulate loading content
       const mockContent = await fetchMockDocument(doc.file);
       setContent(mockContent);
-      setActiveView('viewer');
+      setActiveView("viewer");
     } catch (error) {
-      infoToast('Document not found or still being created');
+      infoToast("Document not found or still being created");
     } finally {
       setLoading(false);
     }
@@ -155,7 +168,7 @@ function Documentation() {
   const fetchMockDocument = async (file) => {
     // Mock document content based on file path
     const mockContent = {
-      'getting-started.md': `# 🚀 Getting Started with SmartRoomAssigner
+      "getting-started.md": `# 🚀 Getting Started with SmartRoomAssigner
 
 ## Welcome!
 
@@ -184,7 +197,7 @@ This guide will help you get started with the SmartRoomAssigner system in just 5
 
 Happy assigning! 🎯`,
 
-      'user-guides/admin-guide.md': `# 👥 Administrator Guide
+      "user-guides/admin-guide.md": `# 👥 Administrator Guide
 
 ## Overview
 
@@ -218,7 +231,7 @@ This comprehensive guide covers all aspects of administering the SmartRoomAssign
 
 Common issues and their solutions are covered in the [Troubleshooting Guide](../admin-docs/troubleshooting.md).`,
 
-      'technical-docs/api-reference.md': `# 🔧 API Reference
+      "technical-docs/api-reference.md": `# 🔧 API Reference
 
 ## Overview
 
@@ -254,39 +267,57 @@ All API endpoints require authentication via JWT tokens or session cookies.
 - \`401\`: Unauthorized
 - \`403\`: Forbidden
 - \`404\`: Not Found
-- \`500\`: Internal Server Error`
+- \`500\`: Internal Server Error`,
     };
 
-    return mockContent[file] || `# 📄 Document Not Found
+    return (
+      mockContent[file] ||
+      `# 📄 Document Not Found
 
 The requested document is currently being created or doesn't exist yet.
 
 ## Available Documents
 
-Please check the documentation hub for available documents, or contact your system administrator.`;
+Please check the documentation hub for available documents, or contact your system administrator.`
+    );
   };
 
-  const filteredStructure = documentationStructure.map(category => ({
-    ...category,
-    documents: category.documents.filter(doc =>
-      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-  })).filter(category => category.documents.length > 0);
+  const filteredStructure = documentationStructure
+    .map((category) => ({
+      ...category,
+      documents: category.documents.filter(
+        (doc) =>
+          doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.tags.some((tag) =>
+            tag.toLowerCase().includes(searchTerm.toLowerCase()),
+          ),
+      ),
+    }))
+    .filter((category) => category.documents.length > 0);
 
-  if (activeView === 'viewer' && selectedDoc) {
+  if (activeView === "viewer" && selectedDoc) {
     return (
       <AdminLayout title="📚 Documentation">
         {/* Viewer Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => setActiveView('hub')}
+              onClick={() => setActiveView("hub")}
               className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               <span>Back to Hub</span>
             </button>
@@ -324,16 +355,30 @@ Please check the documentation hub for available documents, or contact your syst
     <AdminLayout title="📚 Documentation Hub">
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Documentation Center</h2>
-        <p className="text-gray-600">Comprehensive guides, tutorials, and reference materials</p>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+          Documentation Center
+        </h2>
+        <p className="text-gray-600">
+          Comprehensive guides, tutorials, and reference materials
+        </p>
       </div>
 
       {/* Search */}
       <div className="mb-6">
         <div className="max-w-md">
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
@@ -349,12 +394,17 @@ Please check the documentation hub for available documents, or contact your syst
       {/* Documentation Categories */}
       <div className="space-y-8">
         {filteredStructure.map((category) => (
-          <div key={category.category} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div
+            key={category.category}
+            className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+          >
             {/* Category Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <span className="text-2xl">{category.icon}</span>
-                <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {category.category}
+                </h3>
                 <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
                   {category.documents.length} docs
                 </span>
@@ -378,8 +428,12 @@ Please check the documentation hub for available documents, or contact your syst
                         Available
                       </span>
                     </div>
-                    <h4 className="font-medium text-gray-900 mb-2">{doc.title}</h4>
-                    <p className="text-sm text-gray-600 mb-3">{doc.description}</p>
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      {doc.title}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {doc.description}
+                    </p>
                     <div className="flex flex-wrap gap-1">
                       {doc.tags.map((tag) => (
                         <span
@@ -402,7 +456,10 @@ Please check the documentation hub for available documents, or contact your syst
       <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {documentationStructure.reduce((sum, cat) => sum + cat.documents.length, 0)}
+            {documentationStructure.reduce(
+              (sum, cat) => sum + cat.documents.length,
+              0,
+            )}
           </div>
           <div className="text-sm text-gray-600">Total Documents</div>
         </div>
@@ -427,9 +484,12 @@ Please check the documentation hub for available documents, or contact your syst
         <div className="flex items-center space-x-3">
           <span className="text-2xl">🚧</span>
           <div>
-            <h4 className="font-medium text-blue-900">Documentation in Progress</h4>
+            <h4 className="font-medium text-blue-900">
+              Documentation in Progress
+            </h4>
             <p className="text-sm text-blue-800">
-              Some documents are still being created. Check back soon for complete coverage of all features!
+              Some documents are still being created. Check back soon for
+              complete coverage of all features!
             </p>
           </div>
         </div>
