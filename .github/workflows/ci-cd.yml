@@ -140,7 +140,7 @@ jobs:
 
     - name: �🗄️ Setup test database
       env:
-        FLASK_CONFIG: backend.app.config.TestingConfig
+        FLASK_CONFIG: TestingConfig
       run: |
         cd backend
         python -c "
