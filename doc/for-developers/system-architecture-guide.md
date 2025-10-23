@@ -11,41 +11,41 @@ This document provides a comprehensive technical overview of SmartRoomAssigner's
 ### **High-Level System Architecture**
 ```mermaid
 graph TB
-    subgraph "🌐 Client Layer"
+    subgraph "Client Layer"
         A1[Student Portal]
         A2[Admin Dashboard]
         A3[TA Interface]
     end
 
-    subgraph "🌐 Presentation Layer"
+    subgraph "Presentation Layer"
         B1[React Application]
         B2[Redux Store]
         B3[React Router]
         B4[Axios Client]
     end
 
-    subgraph "🚀 Application Layer"
+    subgraph "Application Layer"
         C1[Flask API Server]
         C2[CORS Middleware]
         C3[JWT Authentication]
         C4[Input Validation]
     end
 
-    subgraph "⚙️ Business Logic Layer"
+    subgraph "Business Logic Layer"
         D1[Assignment Engine]
         D2[Notification Service]
         D3[Conflict Resolution]
         D4[Validation Rules]
     end
 
-    subgraph "💾 Data Layer"
+    subgraph "Data Layer"
         E1[PostgreSQL Database]
         E2[Redis Cache]
         E3[File Storage]
         E4[Session Store]
     end
 
-    subgraph "🔧 Infrastructure Layer"
+    subgraph "Infrastructure Layer"
         F1[Docker Containers]
         F2[Load Balancer]
         F3[Monitoring Stack]
@@ -485,7 +485,7 @@ graph TD
     subgraph "Caching Optimizations"
         U[Result Memoization] --> V[Identical request caching]
         W[Partial Result Cache] --> X[Incremental computation]
-        Y[Distributed Cache] --> Z[ Horizontal scaling]
+        Y[Distributed Cache] --> Z[Horizontal scaling]
     end
 ```
 

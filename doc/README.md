@@ -18,6 +18,7 @@ Welcome to the comprehensive documentation center for the SmartRoomAssigner syst
 
 ### 🔧 [Technical Documentation](./technical-docs/)
 - **[Database Architecture Complete](./technical-docs/database-architecture-complete.md)** - Enterprise-grade schema (47 tables)
+- **[Database Table Reference](./technical-docs/database-table-reference.md)** - Complete table introductions
 - **Architecture Overview** - System design and components
 - **Database Schema** - Data models and relationships
 - **API Reference** - Complete API documentation
