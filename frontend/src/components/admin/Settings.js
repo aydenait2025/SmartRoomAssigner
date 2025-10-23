@@ -164,18 +164,6 @@ function Settings() {
         { value: "weekly", label: "Weekly" },
       ],
     },
-    {
-      key: "sessionTimeout",
-      label: "Session Timeout (minutes)",
-      type: "select",
-      value: settings.sessionTimeout,
-      options: [
-        { value: "15", label: "15 minutes" },
-        { value: "30", label: "30 minutes" },
-        { value: "60", label: "1 hour" },
-        { value: "120", label: "2 hours" },
-      ],
-    },
   ];
 
 
@@ -262,16 +250,8 @@ function Settings() {
   ];
 
   return (
-    <AdminLayout title="⚙️ Settings">
+    <AdminLayout title="Settings">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          System Settings
-        </h2>
-        <p className="text-gray-600">
-          Configure application preferences and system behavior
-        </p>
-      </div>
 
       {/* Settings Content */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-8">
