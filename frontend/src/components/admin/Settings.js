@@ -40,8 +40,6 @@ function Settings() {
 
     // Security Settings
     twoFactorAuth: false,
-    loginAttempts: "5",
-    ipWhitelist: "",
   });
 
   const handleSettingChange = (category, key, value) => {
@@ -77,8 +75,6 @@ function Settings() {
       itemsPerPage: "10",
       dateFormat: "MM/DD/YYYY",
       twoFactorAuth: false,
-      loginAttempts: "5",
-      ipWhitelist: "",
     });
     successToast("Settings reset to defaults");
   };
@@ -246,24 +242,6 @@ function Settings() {
       label: "Enable Two-Factor Authentication",
       type: "checkbox",
       value: settings.twoFactorAuth,
-    },
-    {
-      key: "loginAttempts",
-      label: "Max Login Attempts",
-      type: "select",
-      value: settings.loginAttempts,
-      options: [
-        { value: "3", label: "3 attempts" },
-        { value: "5", label: "5 attempts" },
-        { value: "10", label: "10 attempts" },
-      ],
-    },
-    {
-      key: "ipWhitelist",
-      label: "IP Whitelist (comma-separated)",
-      type: "textarea",
-      value: settings.ipWhitelist,
-      placeholder: "192.168.1.1, 10.0.0.1",
     },
   ];
 
