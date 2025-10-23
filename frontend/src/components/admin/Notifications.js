@@ -3,7 +3,7 @@ import { useToast } from "../../hooks/useToast";
 import AdminLayout from "./AdminLayout";
 
 function Notifications() {
-  const { successToast, errorToast, warningToast, infoToast } = useToast();
+  const { successToast, infoToast } = useToast();
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -249,38 +249,7 @@ function Notifications() {
         )}
       </div>
 
-      {/* Test Notification Buttons */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Test Notifications
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button
-            onClick={() => successToast("Test success notification!")}
-            className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200"
-          >
-            Success Toast
-          </button>
-          <button
-            onClick={() => errorToast("Test error notification!")}
-            className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors duration-200"
-          >
-            Error Toast
-          </button>
-          <button
-            onClick={() => warningToast("Test warning notification!")}
-            className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-colors duration-200"
-          >
-            Warning Toast
-          </button>
-          <button
-            onClick={() => infoToast("Test info notification!")}
-            className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors duration-200"
-          >
-            Info Toast
-          </button>
-        </div>
-      </div>
+
     </AdminLayout>
   );
 }
