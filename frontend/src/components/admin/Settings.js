@@ -286,7 +286,9 @@ function Settings() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {setting.label}
                 </label>
-                {renderSettingInput(setting)}
+                <div className="max-w-xs">
+                  {renderSettingInput(setting)}
+                </div>
               </div>
             ))}
           </div>
