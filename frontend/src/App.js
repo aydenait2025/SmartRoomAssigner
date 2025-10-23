@@ -29,9 +29,25 @@ axios.defaults.baseURL =
 axios.defaults.withCredentials = true;
 
 function App() {
-  // Proper authentication checks
+  // Enhanced authentication with Remember Me support
   const isAuthenticated = () => {
-    return !!localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    const rememberMe = localStorage.getItem("rememberMe");
+
+    if (!token) return false;
+
+    // If Remember Me was selected, token is considered valid
+    if (rememberMe === "true") return true;
+
+    // For regular sessions, check if token is recent (basic check)
+    const loginTime = localStorage.getItem("loginTime");
+    if (loginTime) {
+      const currentTime = Date.now();
+      const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours for regular sessions
+      return (currentTime - parseInt(loginTime)) < sessionDuration;
+    }
+
+    return false;
   };
 
   const isAdmin = () => {
@@ -44,7 +60,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
+      <Router future={{ v7_startTransition: true }}>
         <div className="min-h-screen bg-gray-900 text-gray-100">
           {" "}
           {/* Apply dark theme here */}

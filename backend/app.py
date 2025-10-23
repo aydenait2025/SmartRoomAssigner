@@ -569,6 +569,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    # Note: Frontend will handle clearing localStorage on logout
     return jsonify({"message": "Logged out successfully"}), 200
 
 @app.route('/current_user')
