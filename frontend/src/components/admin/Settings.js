@@ -463,6 +463,81 @@ function Settings() {
                 </label>
               </div>
 
+              {/* AI-Powered Scheduling */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">🤖</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      AI-Powered Scheduling
+                    </label>
+                    <p className="text-xs text-gray-500">Optimize room assignments using artificial intelligence</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="aiScheduling"
+                    type="checkbox"
+                    checked={settings.aiScheduling || false}
+                    onChange={(e) => handleSettingChange('aiScheduling', 'aiScheduling', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Predictive Analytics */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">📊</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Predictive Analytics
+                    </label>
+                    <p className="text-xs text-gray-500">AI-driven forecasting and usage pattern analysis</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="predictiveAnalytics"
+                    type="checkbox"
+                    checked={settings.predictiveAnalytics || false}
+                    onChange={(e) => handleSettingChange('predictiveAnalytics', 'predictiveAnalytics', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Smart Maintenance */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">🔧</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Smart Maintenance
+                    </label>
+                    <p className="text-xs text-gray-500">AI-powered preventive maintenance scheduling</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="smartMaintenance"
+                    type="checkbox"
+                    checked={settings.smartMaintenance || false}
+                    onChange={(e) => handleSettingChange('smartMaintenance', 'smartMaintenance', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
               {/* Backup Frequency */}
               <div className="border-t border-gray-100 pt-4">
                 <div className="space-y-2">
