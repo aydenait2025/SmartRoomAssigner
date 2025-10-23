@@ -793,27 +793,6 @@ function Settings() {
           </div>
         </div>
       )}
-
-      {/* System Information */}
-      <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          📊 System Information
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <p className="font-medium text-gray-700">Version</p>
-            <p className="text-gray-600">v2.1.0</p>
-          </div>
-          <div>
-            <p className="font-medium text-gray-700">Last Backup</p>
-            <p className="text-gray-600">2 hours ago</p>
-          </div>
-          <div>
-            <p className="font-medium text-gray-700">Database Status</p>
-            <p className="text-green-600">Healthy</p>
-          </div>
-        </div>
-      </div>
     </AdminLayout>
   );
 }
