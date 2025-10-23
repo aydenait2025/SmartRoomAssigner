@@ -399,41 +399,90 @@ function Settings() {
         </div>
 
         {/* System Settings */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-violet-50 border-b border-gray-200">
+        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <span className="text-2xl">🔧</span>
+                <span className="text-xl text-slate-600">🔧</span>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">System Settings</h3>
-                <p className="text-sm text-gray-600">Configure automated processes and system behavior</p>
+                <h3 className="text-lg font-semibold text-gray-900">System</h3>
+                <p className="text-sm text-gray-500">Manage automated processes and system behavior</p>
               </div>
             </div>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {systemSettings.map((setting) => (
-                <div key={setting.key}>
-                  {setting.type === "select" ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {setting.label}
-                      </label>
-                      <div className="max-w-xs">
-                        {renderSettingInput(setting)}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">
-                        {setting.label}
-                      </span>
-                      {renderSettingInput(setting)}
-                    </div>
-                  )}
+          <div className="p-6 bg-white">
+            <div className="space-y-6">
+              {/* Auto Assignment */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">⚡</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Auto Assignment
+                    </label>
+                    <p className="text-xs text-gray-500">Automatically assign rooms to schedules</p>
+                  </div>
                 </div>
-              ))}
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="autoAssignment"
+                    type="checkbox"
+                    checked={settings.autoAssignment}
+                    onChange={(e) => handleSettingChange('autoAssignment', 'autoAssignment', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Conflict Detection */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                    <span className="text-xs">⚠️</span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                      Conflict Detection
+                    </label>
+                    <p className="text-xs text-gray-500">Detect and alert conflicting schedules</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="conflictDetection"
+                    type="checkbox"
+                    checked={settings.conflictDetection}
+                    onChange={(e) => handleSettingChange('conflictDetection', 'conflictDetection', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Backup Frequency */}
+              <div className="border-t border-gray-100 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">
+                    Backup Frequency
+                  </label>
+                  <p className="text-xs text-gray-500">How often system backups should run</p>
+                  <div className="max-w-xs">
+                    <select
+                      value={settings.backupFrequency}
+                      onChange={(e) => handleSettingChange('backupFrequency', 'backupFrequency', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="hourly">Hourly</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
