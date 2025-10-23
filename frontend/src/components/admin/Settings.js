@@ -16,7 +16,7 @@ function Settings() {
     // General Settings
     siteName: "SmartRoomAssigner",
     adminEmail: "admin@university.edu",
-    timezone: "America/New_York",
+    timezone: "America/Toronto",
     language: "en",
 
     // Notification Settings
@@ -55,7 +55,7 @@ function Settings() {
     setSettings({
       siteName: "SmartRoomAssigner",
       adminEmail: "admin@university.edu",
-      timezone: "America/New_York",
+      timezone: "America/Toronto",
       language: "en",
       emailNotifications: true,
       pushNotifications: true,
@@ -89,7 +89,7 @@ function Settings() {
       type: "select",
       value: settings.timezone,
       options: [
-        { value: "America/New_York", label: "Eastern Time" },
+        { value: "America/Toronto", label: "Eastern Time" },
         { value: "America/Chicago", label: "Central Time" },
         { value: "America/Denver", label: "Mountain Time" },
         { value: "America/Los_Angeles", label: "Pacific Time" },
@@ -102,7 +102,6 @@ function Settings() {
       value: settings.language,
       options: [
         { value: "en", label: "English" },
-        { value: "es", label: "Spanish" },
         { value: "fr", label: "French" },
       ],
     },
@@ -252,10 +251,7 @@ function Settings() {
   return (
     <AdminLayout title="Settings">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings Management</h1>
-        <p className="text-gray-600">Configure system preferences, notifications, and administrative options</p>
-      </div>
+
 
       {/* Settings Content */}
       <div className="space-y-8">
@@ -490,13 +486,7 @@ function Settings() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <button
-            onClick={handleResetSettings}
-            className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium"
-          >
-            Reset to Defaults
-          </button>
+        <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
           <button
             onClick={handleSaveSettings}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
