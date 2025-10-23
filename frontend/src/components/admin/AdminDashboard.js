@@ -52,19 +52,25 @@ function AdminDashboard() {
 
   return (
     <AdminLayout title="">
-      {/* Critical Alerts Section */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          🚨 Urgent Actions Required
-        </h2>
-        <div className="space-y-3">
+      {/* Critical Alerts Section - Compact Design */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-900">
+            🚨 Urgent Actions Required
+          </h2>
+          <span className="text-sm text-gray-500">
+            {criticalAlerts.filter((a) => a.urgent).length} high priority
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
           {criticalAlerts
-            .filter((alert) => alert.urgent)
+            .filter((alert) => alert.urgent || alert.type === "info")
             .map((alert) => (
               <div
                 key={alert.id}
                 className={`
-              p-4 rounded-lg border-l-4 shadow-sm ${
+              p-3 rounded-lg border-l-3 shadow-sm hover:shadow-md transition-shadow duration-200 ${
                 alert.type === "danger"
                   ? "bg-red-50 border-red-500"
                   : alert.type === "warning"
@@ -73,55 +79,34 @@ function AdminDashboard() {
               }
             `}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{alert.icon}</span>
-                    <div>
-                      <h3 className="font-medium text-gray-900">
+                <div className="flex items-start space-x-3">
+                  <span className="text-xl flex-shrink-0">{alert.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900 text-sm">
                         {alert.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {alert.message}
-                      </p>
                       {alert.timeSensitive && (
-                        <span className="inline-flex items-center px-2 py-1 mt-2 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          ⏰ Time Critical
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 ml-2">
+                          ⏰
                         </span>
                       )}
                     </div>
+                    <p className="text-xs text-gray-600 mt-1 leading-tight">
+                      {alert.message}
+                    </p>
                   </div>
-                  <button
-                    onClick={alert.actionHandler}
-                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-                  >
-                    {alert.action}
-                  </button>
                 </div>
-              </div>
-            ))}
-
-          {criticalAlerts
-            .filter((alert) => !alert.urgent && alert.type === "info")
-            .map((alert) => (
-              <div
-                key={alert.id}
-                className="p-4 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{alert.icon}</span>
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {alert.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {alert.message}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mt-3 flex justify-end">
                   <button
                     onClick={alert.actionHandler}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 ${
+                      alert.type === "danger"
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : alert.type === "warning"
+                          ? "bg-yellow-600 hover:bg-yellow-700 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
                   >
                     {alert.action}
                   </button>
