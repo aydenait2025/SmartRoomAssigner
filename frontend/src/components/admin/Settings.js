@@ -440,26 +440,33 @@ function Settings() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Security Settings
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {securitySettings.map((setting) => (
                 <div
                   key={setting.key}
-                  className={
-                    setting.type === "textarea"
-                      ? ""
-                      : "flex items-center justify-between"
-                  }
                 >
-                  <div
-                    className={
-                      setting.type === "textarea" ? "md:col-span-2" : ""
-                    }
-                  >
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {setting.label}
-                    </label>
-                    {renderSettingInput(setting)}
-                  </div>
+                  {setting.type === "checkbox" ? (
+                    <div className="flex items-center">
+                      {renderSettingInput(setting)}
+                      <label className="ml-2 text-sm font-medium text-gray-700">
+                        {setting.label}
+                      </label>
+                    </div>
+                  ) : setting.type === "button" ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {setting.label}
+                      </label>
+                      {renderSettingInput(setting)}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {setting.label}
+                      </label>
+                      {renderSettingInput(setting)}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
