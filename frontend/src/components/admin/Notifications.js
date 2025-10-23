@@ -157,7 +157,7 @@ function Notifications() {
       </div>
 
       {/* Notifications List */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {filteredNotifications.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -176,7 +176,7 @@ function Notifications() {
           filteredNotifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-4 border rounded-lg transition-all duration-200 ${
+              className={`p-3 border rounded-lg transition-all duration-200 ${
                 notification.read
                   ? "bg-white border-gray-200"
                   : "bg-blue-50 border-blue-200 shadow-sm"
