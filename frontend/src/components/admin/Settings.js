@@ -18,6 +18,10 @@ function Settings() {
     adminEmail: "admin@university.edu",
     timezone: "America/Toronto",
     language: "en",
+    dateFormat: "MM/DD/YYYY",
+    currency: "USD",
+    itemsPerPage: "25",
+    maintenanceMode: false,
 
     // Notification Settings
     emailNotifications: true,
@@ -53,19 +57,35 @@ function Settings() {
   const handleResetSettings = () => {
     // Reset to defaults
     setSettings({
+      // General Settings - all default values
       siteName: "SmartRoomAssigner",
       adminEmail: "admin@university.edu",
       timezone: "America/Toronto",
       language: "en",
+      dateFormat: "MM/DD/YYYY",
+      currency: "USD",
+      itemsPerPage: "25",
+      maintenanceMode: false,
+
+      // Notification Settings
       emailNotifications: true,
       pushNotifications: true,
       smsNotifications: false,
       notificationFrequency: "immediate",
+
+      // System Settings
       autoAssignment: true,
       conflictDetection: true,
       backupFrequency: "daily",
       sessionTimeout: "30",
+
+      // Security Settings
       twoFactorAuth: false,
+
+      // New AI features (reset to false)
+      aiScheduling: false,
+      predictiveAnalytics: false,
+      smartMaintenance: false,
     });
     successToast("Settings reset to defaults");
   };
@@ -103,6 +123,43 @@ function Settings() {
       options: [
         { value: "en", label: "English" },
         { value: "fr", label: "French" },
+        { value: "es", label: "Spanish" },
+        { value: "de", label: "German" },
+      ],
+    },
+    {
+      key: "dateFormat",
+      label: "Date Format",
+      type: "select",
+      value: settings.dateFormat,
+      options: [
+        { value: "MM/DD/YYYY", label: "MM/DD/YYYY" },
+        { value: "DD/MM/YYYY", label: "DD/MM/YYYY" },
+        { value: "YYYY-MM-DD", label: "YYYY-MM-DD" },
+      ],
+    },
+    {
+      key: "currency",
+      label: "Currency",
+      type: "select",
+      value: settings.currency,
+      options: [
+        { value: "USD", label: "US Dollar ($)" },
+        { value: "EUR", label: "Euro (€)" },
+        { value: "GBP", label: "British Pound (£)" },
+        { value: "CAD", label: "Canadian Dollar (C$)" },
+      ],
+    },
+    {
+      key: "itemsPerPage",
+      label: "Items Per Page",
+      type: "select",
+      value: settings.itemsPerPage,
+      options: [
+        { value: "10", label: "10 per page" },
+        { value: "25", label: "25 per page" },
+        { value: "50", label: "50 per page" },
+        { value: "100", label: "100 per page" },
       ],
     },
   ];
