@@ -437,12 +437,16 @@ def import_buildings():
                     skipped_count += 1
                     continue # Skip if building already exists
 
-                # If new building, add it and its default rooms
-                num_rooms = 3 # Fixed number of rooms for uploaded buildings
-                room_capacity = 30
-                testing_capacity = room_capacity * 2
+            # If new building, add it and its default rooms
+            building = Building(name=building_name, code=building_code)
+            db.session.add(building)
+            db.session.flush()
 
-                for room_num in range(1, num_rooms + 1):
+            num_rooms = 3 # Fixed number of rooms for uploaded buildings
+            room_capacity = 30
+            testing_capacity = room_capacity * 2
+
+            for room_num in range(1, num_rooms + 1):
                     room = Room(
                         building_id=building.id,
                         room_number=str(room_num).zfill(3),
