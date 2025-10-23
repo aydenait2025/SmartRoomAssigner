@@ -88,18 +88,7 @@ function Notifications() {
   };
 
   const getTypeIcon = (type) => {
-    switch (type) {
-      case "success":
-        return "✅";
-      case "error":
-        return "❌";
-      case "warning":
-        return "⚠️";
-      case "info":
-        return "ℹ️";
-      default:
-        return "📢";
-    }
+    return ""; // Remove emojis for clean design
   };
 
   const formatTimestamp = (timestamp) => {
@@ -116,7 +105,7 @@ function Notifications() {
   };
 
   return (
-    <AdminLayout title="🔔 Notifications">
+    <AdminLayout title="Notifications">
       {/* Header Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-4">
@@ -171,7 +160,11 @@ function Notifications() {
       <div className="space-y-4">
         {filteredNotifications.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">📭</div>
+            <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.891 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               No notifications
             </h3>
@@ -259,7 +252,7 @@ function Notifications() {
       {/* Test Notification Buttons */}
       <div className="mt-8 pt-6 border-t border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          🧪 Test Notifications
+          Test Notifications
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
