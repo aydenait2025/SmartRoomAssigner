@@ -469,30 +469,6 @@ function Settings() {
             </div>
           </div>
         )}
-
-        {/* Action Buttons */}
-        <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between">
-          <button
-            onClick={handleResetSettings}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-          >
-            Reset to Defaults
-          </button>
-          <div className="space-x-3">
-            <button
-              onClick={() => infoToast("Settings preview would show here")}
-              className="px-4 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200"
-            >
-              Preview Changes
-            </button>
-            <button
-              onClick={handleSaveSettings}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200"
-            >
-              Save Settings
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Change Password Modal */}
