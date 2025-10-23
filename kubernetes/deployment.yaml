@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartroomassigner-backend
+  labels:
+    app: smartroomassigner
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smartroomassigner
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: smartroomassigner
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: smartroomassigner/backend:latest
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: database_url
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt_secret
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartroomassigner-frontend
+  labels:
+    app: smartroomassigner
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartroomassigner
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: smartroomassigner
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: smartroomassigner/frontend:latest
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://smartroomassigner-backend-service"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartroomassigner-nginx
+  labels:
+    app: smartroomassigner
+    component: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartroomassigner
+      component: nginx
+  template:
+    metadata:
+      labels:
+        app: smartroomassigner
+        component: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: smartroomassigner/nginx:latest
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"

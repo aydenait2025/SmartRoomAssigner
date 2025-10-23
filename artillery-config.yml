@@ -1,0 +1,125 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      name: "Normal load"
+    - duration: 60
+      arrivalRate: 20
+      name: "Peak load"
+    - duration: 30
+      arrivalRate: 50
+      name: "Stress test"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  - name: "Health check"
+    weight: 1
+    requests:
+      - get:
+          url: "/health"
+
+  - name: "User authentication flow"
+    weight: 2
+    requests:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "test@smartroomassigner.com"
+            password: "password123"
+          expect:
+            - statusCode: 200
+          capture:
+            json: "$.data.token"
+            as: "auth_token"
+      - post:
+          url: "/api/v1/auth/logout"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+
+  - name: "Student data operations"
+    weight: 3
+    requests:
+      - get:
+          url: "/api/v1/students"
+          expect:
+            - statusCode: 200
+          capture:
+            json: "$.data[0].id"
+            as: "student_id"
+      - get:
+          url: "/api/v1/students/{{ student_id }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Building and room queries"
+    weight: 2
+    requests:
+      - get:
+          url: "/api/v1/buildings"
+      - get:
+          url: "/api/v1/rooms"
+          qs:
+            capacity_gte: 30
+
+  - name: "Exam scheduling operations"
+    weight: 2
+    requests:
+      - get:
+          url: "/api/v1/exams"
+          qs:
+            date_start: "2025-01-01"
+            date_end: "2025-12-31"
+      - get:
+          url: "/api/v1/exam-sessions"
+          qs:
+            status: "scheduled"
+
+  - name: "Admin dashboard load"
+    weight: 1
+    requests:
+      - get:
+          url: "/api/v1/admin/dashboard/stats"
+      - get:
+          url: "/api/v1/admin/students?limit=50"
+      - get:
+          url: "/api/v1/admin/exams/summary"
+
+  - name: "Mixed API usage"
+    weight: 2
+    requests:
+      - get:
+          url: "/api/v1/system/health"
+      - get:
+          url: "/api/v1/time-slots/available"
+      - get:
+          url: "/api/v1/notifications"
+          expect:
+            - statusCode: 401  # Should fail without auth
+
+# Environment-specific overrides
+environments:
+  staging:
+    target: 'https://staging-api.smartroomassigner.com'
+    phases:
+      - duration: 30
+        arrivalRate: 2
+        name: "Stage warm up"
+      - duration: 60
+        arrivalRate: 5
+        name: "Stage normal load"
+
+  production:
+    target: 'https://api.smartroomassigner.com'
+    phases:
+      - duration: 120
+        arrivalRate: 2
+        name: "Prod warm up"
+      - duration: 300
+        arrivalRate: 5
+        name: "Prod sustained load"
