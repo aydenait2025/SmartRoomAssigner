@@ -300,7 +300,10 @@ function AdminDashboard() {
               </span>
             </div>
           </div>
-          <button className="w-full mt-4 text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+          <button
+            onClick={() => navigate("/admin/schedule-management")}
+            className="w-full mt-4 text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          >
             View Full Calendar →
           </button>
         </div>
