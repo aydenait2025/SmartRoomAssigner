@@ -136,12 +136,13 @@ jobs:
         pip install pytest pytest-cov pytest-mock pytest-flask coverage
 
     - name: 🗄️ Setup test database
+      env:
+        FLASK_CONFIG: backend.app.config.TestingConfig
       run: |
         cd backend
         python -c "
-        from app.config import TestingConfig
         from app import create_app, db
-        app = create_app(TestingConfig)
+        app = create_app()
         with app.app_context():
             db.create_all()
         "
@@ -251,7 +252,6 @@ jobs:
       uses: returntocorp/semgrep-action@v1
       with:
         config: auto
-        sarif-format: true
 
     - name: 📤 Upload security reports
       uses: actions/upload-artifact@v4

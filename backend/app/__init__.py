@@ -14,10 +14,17 @@ from .extensions import db, login_manager, oauth
 # Import models for database creation
 from .models import user, student, building, exam, assignment
 
-def create_app(config_class=Config):
+def create_app(config_class=None):
     """Application factory pattern"""
     app = Flask(__name__)
-    app.config.from_object(config_class)
+
+    if config_class is None:
+        # Use environment variable for configuration
+        config_name = os.getenv('FLASK_CONFIG', 'backend.app.config.DevelopmentConfig')
+        app.config.from_object(config_name)
+    else:
+        # Use provided config class directly
+        app.config.from_object(config_class)
 
     # Initialize extensions
     db.init_app(app)
