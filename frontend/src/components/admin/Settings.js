@@ -19,7 +19,6 @@ function Settings() {
     timezone: "America/Toronto",
     language: "en",
     dateFormat: "MM/DD/YYYY",
-    currency: "USD",
     itemsPerPage: "25",
     maintenanceMode: false,
 
@@ -63,7 +62,6 @@ function Settings() {
       timezone: "America/Toronto",
       language: "en",
       dateFormat: "MM/DD/YYYY",
-      currency: "USD",
       itemsPerPage: "25",
       maintenanceMode: false,
 
@@ -138,18 +136,7 @@ function Settings() {
         { value: "YYYY-MM-DD", label: "YYYY-MM-DD" },
       ],
     },
-    {
-      key: "currency",
-      label: "Currency",
-      type: "select",
-      value: settings.currency,
-      options: [
-        { value: "USD", label: "US Dollar ($)" },
-        { value: "EUR", label: "Euro (€)" },
-        { value: "GBP", label: "British Pound (£)" },
-        { value: "CAD", label: "Canadian Dollar (C$)" },
-      ],
-    },
+
     {
       key: "itemsPerPage",
       label: "Items Per Page",
