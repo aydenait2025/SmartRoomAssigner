@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 // Education-related image placeholder
 const loginBg =
@@ -143,7 +143,13 @@ function Login() {
                   Sign in now
                 </button>
               </div>
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm text-gray-600 mb-4">
+                Don't have an account?{" "}
+                <Link to="/signup" className="text-orange-500 hover:underline">
+                  Sign up here
+                </Link>
+              </p>
+              <p className="text-center text-xs text-gray-500">
                 By clicking on "Sign in now" you agree to
                 <button
                   type="button"

@@ -466,26 +466,95 @@ def import_buildings():
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    role = data.get('role', 'student')
 
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    # Extract required fields
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    name = data.get('name', '').strip()
+    role_name = data.get('role', 'student').strip().lower()
+
+    # Additional fields for students
+    first_name = data.get('first_name', '').strip()
+    last_name = data.get('last_name', '').strip()
+    student_number = data.get('student_number', '').strip()
+
+    # Validation
+    if not all([email, password, name]):
+        return jsonify({"error": "Email, password, and name are required"}), 400
+
+    # Email validation
+    if '@' not in email or '.' not in email:
+        return jsonify({"error": "Invalid email format"}), 400
+
+    # Password strength
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long"}), 400
+
+    # Role validation
+    if role_name not in ['admin', 'student']:
+        return jsonify({"error": "Invalid role. Must be 'admin' or 'student'"}), 400
+
+    # Additional validation for students
+    if role_name == 'student':
+        if not all([first_name, last_name, student_number]):
+            return jsonify({"error": "First name, last name, and student number are required for students"}), 400
+        if len(student_number) < 3:
+            return jsonify({"error": "Student number must be at least 3 characters"}), 400
 
     with app.app_context():
-        if User.query.filter_by(email=email).first():
-            return jsonify({"error": "Email already exists"}), 409
+        try:
+            # Check if email already exists
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                return jsonify({"error": "Email already registered"}), 409
 
-        # Get role ID
-        role_obj = Role.query.filter_by(name=role).first()
-        if not role_obj:
-            return jsonify({"error": f"Invalid role: {role}"}), 400
+            # Check if student number exists (for students)
+            if role_name == 'student':
+                existing_student = Student.query.filter_by(student_number=student_number).first()
+                if existing_student:
+                    return jsonify({"error": "Student number already exists"}), 409
 
-        new_user = User(name=email, email=email, role_id=role_obj.id, password_hash=generate_password_hash(password))
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({"message": "User registered successfully"}), 201
+            # Get role
+            role_obj = Role.query.filter_by(name=role_name).first()
+            if not role_obj:
+                return jsonify({"error": f"Role '{role_name}' not found in database"}), 500
+
+            # Create user
+            new_user = User(
+                name=name,
+                email=email,
+                role_id=role_obj.id,
+                password_hash=generate_password_hash(password)
+            )
+            db.session.add(new_user)
+            db.session.flush()  # Get the user ID
+
+            # Create student profile if role is student
+            if role_name == 'student':
+                student = Student(
+                    first_name=first_name,
+                    last_name=last_name,
+                    student_number=student_number,
+                    student_id=email  # Use email as student ID
+                )
+                db.session.add(student)
+
+            db.session.commit()
+
+            return jsonify({
+                "message": "Registration successful",
+                "user": {
+                    "id": new_user.id,
+                    "name": new_user.name,
+                    "email": new_user.email,
+                    "role": role_name
+                }
+            }), 201
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Registration error: {e}")
+            return jsonify({"error": "Registration failed. Please try again."}), 500
 
 @app.route("/login", methods=["POST"])
 def login():

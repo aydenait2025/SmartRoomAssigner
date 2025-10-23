@@ -8,6 +8,7 @@ import {
 import axios from "axios";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Login from "./components/Login";
+import Signup from "./components/Signup";
 import StudentDashboard from "./components/student/StudentDashboard";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import RoomManagement from "./components/admin/RoomManagement";
@@ -58,6 +59,7 @@ function App() {
           {/* Apply dark theme here */}
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
             {/* Student Routes */}
             <Route
