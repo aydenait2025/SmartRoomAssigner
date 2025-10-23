@@ -135,7 +135,10 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-mock pytest-flask coverage
 
-    - name: 🗄️ Setup test database
+    - name: � Add backend to PYTHONPATH
+      run: echo "PYTHONPATH=$(pwd)/backend" >> $GITHUB_ENV
+
+    - name: �🗄️ Setup test database
       env:
         FLASK_CONFIG: backend.app.config.TestingConfig
       run: |
