@@ -281,16 +281,22 @@ function Settings() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {notificationSettings.map((setting) => (
-              <div
-                key={setting.key}
-                className="flex items-center justify-between"
-              >
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    {setting.label}
-                  </label>
-                </div>
-                {renderSettingInput(setting)}
+              <div key={setting.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {setting.label}
+                </label>
+                {setting.type === "select" ? (
+                  <div className="max-w-xs">
+                    {renderSettingInput(setting)}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {setting.label}
+                    </span>
+                    {renderSettingInput(setting)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -303,16 +309,24 @@ function Settings() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {systemSettings.map((setting) => (
-              <div
-                key={setting.key}
-                className="flex items-center justify-between"
-              >
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    {setting.label}
-                  </label>
-                </div>
-                {renderSettingInput(setting)}
+              <div key={setting.key}>
+                {setting.type === "select" ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {setting.label}
+                    </label>
+                    <div className="max-w-xs">
+                      {renderSettingInput(setting)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {setting.label}
+                    </span>
+                    {renderSettingInput(setting)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
