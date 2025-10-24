@@ -1122,7 +1122,7 @@ def get_assignments():
 @app.route('/buildings', methods=['GET'])
 @login_required
 def get_buildings():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     page = request.args.get('page', 1, type=int)
