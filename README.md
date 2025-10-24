@@ -56,6 +56,7 @@ Get SmartRoomAssigner running in under 5 minutes:
 
 ### Installation
 
+#### Option 1: Docker (Recommended for Production)
 ```bash
 # 1. Clone the repository
 git clone https://github.com/aydenait2025/SmartRoomAssigner.git
@@ -68,6 +69,31 @@ docker-compose up --build -d
 curl http://localhost:5000/init-db
 
 # 4. Access the application
+open http://localhost:3000
+```
+
+#### Option 2: Local Development with PostgreSQL
+```bash
+# 1. Prerequisites: Python 3.9+, Node.js, PostgreSQL
+# Create PostgreSQL database according to ultimate_enterprise_schema.sql
+createdb smartroomassigner
+
+# 2. Clone and setup
+git clone https://github.com/aydenait2025/SmartRoomAssigner.git
+cd SmartRoomAssigner
+
+# 3. Setup backend
+cd backend
+pip install -r requirements.txt
+# Configure .env with your PostgreSQL DATABASE_URL
+python app.py &
+
+# 4. Setup frontend
+cd ../frontend
+npm install
+npm start &
+
+# 5. Access the application
 open http://localhost:3000
 ```
 

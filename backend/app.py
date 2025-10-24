@@ -10,6 +10,7 @@ import io
 import csv
 import secrets
 from math import floor
+from datetime import date
 # from flask_mail import Mail, Message  # Commented out as it's not currently used
 import requests
 from authlib.integrations.flask_client import OAuth
@@ -88,109 +89,8 @@ def load_user(user_id):
 # Clear any existing table definitions from previous registrations
 db.metadata.clear()
 
-# Define database models inline
-class Role(db.Model):
-    __tablename__ = 'role'
-    __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
-    def __repr__(self):
-        return f"<Role {self.name}>"
-
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
-    role = db.relationship('Role', backref='users')
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    def is_admin(self):
-        return self.role.name == 'admin' if self.role else False
-
-    def __repr__(self):
-        return f"<User {self.name} ({self.role.name if self.role else 'no role'})>"
-
-class Student(db.Model):
-    __tablename__ = 'student'
-    __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(50), nullable=False)
-    last_name = db.Column(db.String(50), nullable=False)
-    student_number = db.Column(db.String(20), unique=True, nullable=False)
-    student_id = db.Column(db.String(100), nullable=False)  # Email/ID
-    department = db.Column(db.String(100))
-    courses = db.Column(db.Text)
-
-    enrollments = db.relationship('Enrollment', backref='student', lazy=True)
-    room_assignments = db.relationship('RoomAssignment', backref='student', lazy=True)
-
-    def __repr__(self):
-        return f"<Student {self.student_number}>"
-
-class Building(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)  # Maps to building_name
-    code = db.Column(db.String(10), nullable=False)  # Maps to building_code
-    address = db.Column(db.Text)
-
-    rooms = db.relationship('Room', backref='building', lazy=True)
-
-    def __repr__(self):
-        return f"<Building {self.code}: {self.name}>"
-
-class Room(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    building_id = db.Column(db.Integer, db.ForeignKey('building.id'), nullable=False)
-    room_number = db.Column(db.String(20), nullable=False)
-    capacity = db.Column(db.Integer, nullable=False)
-    testing_capacity = db.Column(db.Integer)
-    floor = db.Column(db.Integer, default=1)
-    allowed = db.Column(db.Boolean, default=True)
-    type = db.Column(db.String(50), default='Lecture')
-    building_name = db.Column(db.String(200))  # For legacy compatibility
-
-    def __repr__(self):
-        return f"<Room {self.building.code if self.building else 'Unknown'}-{self.room_number}>"
-
-class Exam(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    course_name = db.Column(db.String(100))
-    course_code = db.Column(db.String(20))
-    exam_date = db.Column(db.Date)
-    start_time = db.Column(db.Time)
-    end_time = db.Column(db.Time)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
-    creator = db.relationship('User', backref='created_exams', lazy=True)
-
-    def __repr__(self):
-        return f"<Exam {self.course_code} on {self.exam_date}>"
-
-class Enrollment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
-    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
-
-class RoomAssignment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'))
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
-    seat_number = db.Column(db.String(10))
-
-class Assignment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
-    course = db.Column(db.String(100)) # Optional: if assignments are course-specific
-    exam_date = db.Column(db.DateTime) # Optional: if assignments are date-specific
+# Import models
+from app.models import User, Role, Student, Building, Room, Exam, Assignment, RoomAssignment, Enrollment
 
 
 # Routes
@@ -253,30 +153,30 @@ def init_db_route():
         db.session.add_all(rooms_data)
         db.session.flush()
 
-        # Create sample exam
-        exam = Exam(
-            course_name='Introduction to Databases',
-            course_code='CS301',
-            exam_date='2025-12-10',
-            start_time='09:00:00',
-            end_time='12:00:00',
-            created_by=users_data[1].id  # Dr. Bob
-        )
-        db.session.add(exam)
-        db.session.flush()
+        # # Create sample exam
+        # exam = Exam(
+        #     course_name='Introduction to Databases',
+        #     course_code='CS301',
+        #     exam_date=date(2025, 12, 10),
+        #     start_time='09:00:00',
+        #     end_time='12:00:00',
+        #     created_by=users_data[1].id  # Dr. Bob
+        # )
+        # db.session.add(exam)
+        # db.session.flush()
 
-        # Create enrollment
-        enrollment = Enrollment(student_id=student.id, exam_id=exam.id)
-        db.session.add(enrollment)
+        # # Create enrollment
+        # enrollment = Enrollment(student_id=student.id, exam_id=exam.id)
+        # db.session.add(enrollment)
 
-        # Create room assignment
-        room_assignment = RoomAssignment(
-            exam_id=exam.id,
-            room_id=rooms_data[0].id,
-            student_id=student.id,
-            seat_number='A1'
-        )
-        db.session.add(room_assignment)
+        # # Create room assignment
+        # room_assignment = RoomAssignment(
+        #     exam_id=exam.id,
+        #     room_id=rooms_data[0].id,
+        #     student_id=student.id,
+        #     seat_number='A1'
+        # )
+        # db.session.add(room_assignment)
 
         db.session.commit()
     return "Database initialized with sample data for all tables!"
@@ -297,7 +197,34 @@ def seed_buildings():
         'EP': 'Stewart Building',
         'ES': 'Earth Sciences Centre',
         'EX': 'Exam Centre',
-        'FE': 'Bloor Street West-371'
+        'FE': 'Bloor Street West-371',
+        'GB': 'Galbraith Building',
+        'GE': 'Gerald Larkin Building',
+        'HM': 'Hart House',
+        'HS': 'Health Sciences Building',
+        'IS': 'Innis College',
+        'KI': 'Koffler Centre',
+        'KN': 'Knowles Building',
+        'LA': 'Lassonde Entrepreneurship Institute',
+        'MS': 'Medical Sciences Building',
+        'MY': 'Myhal Centre for Engineering Innovation',
+        'NS': 'New College',
+        'OI': 'Odette Hall',
+        'PM': 'Political Science Building at Sidney Smith',
+        'RB': 'Robert G. Lee Building',
+        'RW': 'Robarts Library',
+        'SA': 'Sandford Fleming Building',
+        'SF': 'Sidney Smith Building',
+        'SS': 'St. George Campus',
+        'TD': 'Trinity College',
+        'TR': 'Terrence Donnelly Health Sciences Complex',
+        'UC': 'University College',
+        'UT': 'University College Union',
+        'VC': 'Victoria College',
+        'WB': 'William G. Davis Building',
+        'WI': 'Wilson Building',
+        'WO': 'Woodsworth College',
+        'ZB': 'Zorra Building'
     }
 
     with app.app_context():
@@ -1051,7 +978,7 @@ def get_rooms():
                     "id": room.id,
                     "building_name": room.building_name,
                     "room_number": room.room_number,
-                    "room_capacity": room.room_capacity,
+                    "room_capacity": room.capacity,
                     "testing_capacity": room.testing_capacity,
                     "allowed": room.allowed
                 } for room in rooms
@@ -1137,7 +1064,7 @@ def get_buildings():
 
         # Add buildings from the buildings table
         for building in all_buildings:
-            building_name = f"{building.code} - {building.name}"
+            building_name = f"{building.code} - {building.name}" if building.name else building.code
             buildings_dict[building_name] = {
                 "building_name": building_name,
                 "id": building.id,
@@ -1208,14 +1135,8 @@ def get_dashboard_stats():
         return jsonify({"error": "Unauthorized"}), 403
 
     with app.app_context():
-        # Use raw SQL to count from the 'buildings' table (enterprise schema) not the legacy 'building' table
-        try:
-            # Query buildings table directly for accurate count
-            result = db.session.execute(text("SELECT COUNT(*) FROM buildings"))
-            total_buildings = result.scalar()
-        except:
-            # Fallback to legacy building table if needed
-            total_buildings = Building.query.count()
+        # Count total buildings
+        total_buildings = Building.query.count()
 
         total_rooms = Room.query.count()
         available_rooms = Room.query.filter_by(allowed=True).count()
