@@ -22,6 +22,15 @@ app = Flask(__name__)
 from app.config import config
 app.config.from_object(config['development'])
 
+# Register blueprints - only auth for now to avoid model conflicts
+from app.routes.auth import bp as auth_bp
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+# Other blueprints commented out due to model conflicts
+# from app.routes.users import bp as users_bp
+# app.register_blueprint(users_bp, url_prefix='/api/users')
+# ... other blueprints
+
 # Override with environment variables if needed
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', app.config.get('SECRET_KEY', 'a_very_secret_key'))
 CORS(app, supports_credentials=True, origins=[
@@ -36,9 +45,9 @@ CORS(app, supports_credentials=True, origins=[
     "http://172.20.0.1:5000"   # Direct backend access from Docker
 ]) # Enable CORS for credentials
 
-# Database URI is now configured in config.py
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+# Initialize database using the extension
+from app.extensions import db
+db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.session_protection = "strong" # Protect sessions
@@ -76,8 +85,13 @@ microsoft = oauth.register(
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Database Models
+# Clear any existing table definitions from previous registrations
+db.metadata.clear()
+
+# Define database models inline
 class Role(db.Model):
+    __tablename__ = 'role'
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
@@ -91,9 +105,6 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref='users')
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-    # student_profile = db.relationship('Student', backref='user', uselist=False, lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -108,13 +119,15 @@ class User(UserMixin, db.Model):
         return f"<User {self.name} ({self.role.name if self.role else 'no role'})>"
 
 class Student(db.Model):
+    __tablename__ = 'student'
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     student_number = db.Column(db.String(20), unique=True, nullable=False)
     student_id = db.Column(db.String(100), nullable=False)  # Email/ID
-    department = db.Column(db.String(100), nullable=True)
-    courses = db.Column(db.Text, nullable=True)  # Comma-separated courses
+    department = db.Column(db.String(100))
+    courses = db.Column(db.Text)
 
     enrollments = db.relationship('Enrollment', backref='student', lazy=True)
     room_assignments = db.relationship('RoomAssignment', backref='student', lazy=True)
@@ -124,8 +137,8 @@ class Student(db.Model):
 
 class Building(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(10), unique=True, nullable=False)
+    name = db.Column(db.String(200), nullable=False)  # Maps to building_name
+    code = db.Column(db.String(10), nullable=False)  # Maps to building_code
     address = db.Column(db.Text)
 
     rooms = db.relationship('Room', backref='building', lazy=True)
@@ -138,10 +151,11 @@ class Room(db.Model):
     building_id = db.Column(db.Integer, db.ForeignKey('building.id'), nullable=False)
     room_number = db.Column(db.String(20), nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
-    floor = db.Column(db.Integer)
-    type = db.Column(db.String(50))
-
-    room_assignments = db.relationship('RoomAssignment', backref='room', lazy=True)
+    testing_capacity = db.Column(db.Integer)
+    floor = db.Column(db.Integer, default=1)
+    allowed = db.Column(db.Boolean, default=True)
+    type = db.Column(db.String(50), default='Lecture')
+    building_name = db.Column(db.String(200))  # For legacy compatibility
 
     def __repr__(self):
         return f"<Room {self.building.code if self.building else 'Unknown'}-{self.room_number}>"
@@ -150,14 +164,11 @@ class Exam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course_name = db.Column(db.String(100))
     course_code = db.Column(db.String(20))
-    exam_date = db.Column(db.Date, nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    exam_date = db.Column(db.Date)
+    start_time = db.Column(db.Time)
+    end_time = db.Column(db.Time)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     creator = db.relationship('User', backref='created_exams', lazy=True)
-
-    enrollments = db.relationship('Enrollment', backref='exam', lazy=True)
-    room_assignments = db.relationship('RoomAssignment', backref='exam', lazy=True)
 
     def __repr__(self):
         return f"<Exam {self.course_code} on {self.exam_date}>"
@@ -167,29 +178,20 @@ class Enrollment(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
 
-    def __repr__(self):
-        return f"<Enrollment Student: {self.student_id}, Exam: {self.exam_id}>"
-
 class RoomAssignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'))
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
     seat_number = db.Column(db.String(10))
 
-    def __repr__(self):
-        return f"<RoomAssignment Student: {self.student_id}, Room: {self.room_id}, Exam: {self.exam_id}>"
-
-# Keep the old Assignment model for backward compatibility
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), unique=True, nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     course = db.Column(db.String(100)) # Optional: if assignments are course-specific
     exam_date = db.Column(db.DateTime) # Optional: if assignments are date-specific
 
-    def __repr__(self):
-        return f"<Assignment Student: {self.student_id}, Room: {self.room_id}>"
 
 # Routes
 @app.route('/')
@@ -1129,15 +1131,35 @@ def get_buildings():
     per_page = request.args.get('per_page', 10, type=int)
 
     with app.app_context():
-        # Group rooms by building
-        rooms = Room.query.all()
+        # First, get all buildings from the buildings table (from add_uoft_buildings.py)
+        all_buildings = Building.query.all()
         buildings_dict = {}
+
+        # Add buildings from the buildings table
+        for building in all_buildings:
+            building_name = f"{building.code} - {building.name}"
+            buildings_dict[building_name] = {
+                "building_name": building_name,
+                "id": building.id,
+                "building_code": building.code,
+                "total_rooms": 0,
+                "total_capacity": 0,
+                "total_testing_capacity": 0,
+                "available_rooms": 0,
+                "rooms": []
+            }
+
+        # Then group rooms by building and merge with buildings from buildings table
+        rooms = Room.query.all()
 
         for room in rooms:
             building_name = room.building_name
             if building_name not in buildings_dict:
+                # Room belongs to a building not yet in our dict (shouldn't happen but handle it)
                 buildings_dict[building_name] = {
                     "building_name": building_name,
+                    "id": None,
+                    "building_code": building_name.split(" - ")[0] if " - " in building_name else building_name[:3],
                     "total_rooms": 0,
                     "total_capacity": 0,
                     "total_testing_capacity": 0,
@@ -1148,14 +1170,14 @@ def get_buildings():
             buildings_dict[building_name]["rooms"].append({
                 "id": room.id,
                 "room_number": room.room_number,
-                "room_capacity": room.room_capacity,
+                "room_capacity": room.capacity,
                 "testing_capacity": room.testing_capacity,
                 "allowed": room.allowed
             })
 
             buildings_dict[building_name]["total_rooms"] += 1
-            buildings_dict[building_name]["total_capacity"] += room.room_capacity
-            buildings_dict[building_name]["total_testing_capacity"] += room.testing_capacity
+            buildings_dict[building_name]["total_capacity"] += room.capacity
+            buildings_dict[building_name]["total_testing_capacity"] += (room.testing_capacity or 0)
             if room.allowed:
                 buildings_dict[building_name]["available_rooms"] += 1
 
@@ -1177,6 +1199,41 @@ def get_buildings():
             "total_pages": total_pages,
             "current_page": page,
             "total_items": total_items
+        }), 200
+
+@app.route('/dashboard/stats', methods=['GET'])
+@login_required
+def get_dashboard_stats():
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    with app.app_context():
+        # Use raw SQL to count from the 'buildings' table (enterprise schema) not the legacy 'building' table
+        try:
+            # Query buildings table directly for accurate count
+            result = db.session.execute(text("SELECT COUNT(*) FROM buildings"))
+            total_buildings = result.scalar()
+        except:
+            # Fallback to legacy building table if needed
+            total_buildings = Building.query.count()
+
+        total_rooms = Room.query.count()
+        available_rooms = Room.query.filter_by(allowed=True).count()
+        total_students = Student.query.count()
+        active_exams = Exam.query.count()
+        assigned_students = Assignment.query.count()
+
+        # Calculate unassigned students (students without assignments for upcoming exams)
+        unassigned_students = Student.query.filter(~Student.enrollments.any()).count()
+
+        return jsonify({
+            "total_buildings": total_buildings,
+            "total_rooms": total_rooms,
+            "available_rooms": available_rooms,
+            "total_students": total_students,
+            "active_exams": active_exams,
+            "assigned_students": assigned_students,
+            "unassigned_students": unassigned_students
         }), 200
 
 # CRUD operations for rooms

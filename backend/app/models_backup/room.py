@@ -14,7 +14,7 @@ class Room(db.Model):
     notes = db.Column(db.Text)
 
     # Relationships
-    assignments = db.relationship('Assignment', backref='room', lazy=True)
+    # Note: assignments removed to avoid backref conflict with Assignment.room
 
     def __repr__(self):
         return f"<Room {self.building.code if self.building else 'Unknown'}-{self.room_number}>"

@@ -1,7 +1,6 @@
 """Authentication service for user management and validation"""
 
 from flask import current_app
-from ..models.user import User, Role
 from ..extensions import db
 
 class AuthService:

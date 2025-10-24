@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from ..models.user import User
 from ..services.auth_service import AuthService
 import requests
 
@@ -8,16 +7,16 @@ bp = Blueprint('auth', __name__)
 
 @bp.route('/login', methods=['POST'])
 def login():
-    """Handle user login"""
+    """Handle user login using email and password"""
     data = request.get_json()
-    username = data.get('username')
+    email = data.get('email')  # Changed from username to email
     password = data.get('password')
 
-    if not username or not password:
-        return jsonify({'error': 'Username and password required'}), 400
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
 
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
+    user = User.query.filter_by(email=email).first()
+    if user and user.is_active and user.password_hash and user.check_password(password):
         login_user(user)
         return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
 

@@ -116,6 +116,12 @@ function App() {
               element={isAdmin() ? <AssignmentTab /> : <Navigate to="/login" />}
             />
             <Route
+              path="/admin/buildings"
+              element={
+                isAdmin() ? <BuildingLocator /> : <Navigate to="/login" />
+              }
+            />
+            <Route
               path="/admin/building-locator"
               element={
                 isAdmin() ? <BuildingLocator /> : <Navigate to="/login" />

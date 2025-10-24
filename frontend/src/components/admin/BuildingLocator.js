@@ -17,7 +17,13 @@ function BuildingLocator() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [sortBy, setSortBy] = useState("building_name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const itemsPerPage = 10;
+
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null); // Use a ref for the Leaflet map instance
   const markersRef = useRef([]); // To keep track of Leaflet markers
@@ -115,30 +121,91 @@ function BuildingLocator() {
     }).addTo(leafletMapRef.current);
   };
 
-  const searchBuildings = (term) => {
-    setSearchTerm(term);
-    if (!term.trim()) {
-      setSelectedBuilding(null);
-      // Optionally reset map view or clear markers
-      clearBuildingMarkers();
-      leafletMapRef.current.setView(UOFT_CENTER, DEFAULT_ZOOM);
-      return;
-    }
-
-    const found = buildings.find((building) => {
+  // Enhanced search and filter logic
+  const filteredAndSortedBuildings = () => {
+    let filtered = buildings.filter((building) => {
       const code = building.building_name.split(" - ")[0];
       const name = building.building_name.split(" - ")[1] || "";
-      return (
-        code.toLowerCase().includes(term.toLowerCase()) ||
-        name.toLowerCase().includes(term.toLowerCase())
-      );
+
+      // Search filter
+      const matchesSearch = !searchTerm ||
+        code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Type filter
+      const matchesFilter = !filterType || building.type === filterType;
+
+      return matchesSearch && matchesFilter;
     });
 
-    setSelectedBuilding(found || null);
-    if (found) {
-      showBuildingOnMap(found);
+    // Sort buildings
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortBy) {
+        case "building_name":
+          aValue = a.building_name.toLowerCase();
+          bValue = b.building_name.toLowerCase();
+          break;
+        case "total_rooms":
+          aValue = a.total_rooms;
+          bValue = b.total_rooms;
+          break;
+        case "total_capacity":
+          aValue = a.total_capacity;
+          bValue = b.total_capacity;
+          break;
+        case "available_rooms":
+          aValue = a.available_rooms;
+          bValue = b.available_rooms;
+          break;
+        default:
+          aValue = a.building_name.toLowerCase();
+          bValue = b.building_name.toLowerCase();
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  };
+
+  const paginatedBuildings = () => {
+    const filtered = filteredAndSortedBuildings();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  const totalPages = () => {
+    return Math.ceil(filteredAndSortedBuildings().length / itemsPerPage);
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
+  const handleBuildingSelect = (building) => {
+    setSelectedBuilding(building);
+    showBuildingOnMap(building);
+    setCurrentPage(1); // Reset to first page when selecting a building
+  };
+
+  const searchBuildings = (term) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset pagination when searching
+    if (!term.trim()) {
+      setSelectedBuilding(null);
       clearBuildingMarkers();
+      leafletMapRef.current?.setView(UOFT_CENTER, DEFAULT_ZOOM);
     }
   };
 
@@ -248,137 +315,240 @@ function BuildingLocator() {
     );
   }
 
+  const SortIcon = ({ column }) => {
+    if (sortBy !== column) return null;
+    return (
+      <span className="ml-1">
+        {sortOrder === "asc" ? "↑" : "↓"}
+      </span>
+    );
+  };
+
   return (
     <AdminLayout title="🗺️ Building Locator">
-      <div className="flex justify-end space-x-2 mb-6">
-        <button
-          onClick={fetchBuildings}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-        >
-          🔄 Refresh Buildings
-        </button>
+      {/* Header Controls */}
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            placeholder="🔍 Search by name or code..."
+            value={searchTerm}
+            onChange={(e) => searchBuildings(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[250px]"
+          />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="Lecture">Lecture</option>
+            <option value="Lab">Lab</option>
+            <option value="Office">Office</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchBuildings}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Search Panel */}
-        <div className="lg:col-span-1">
-          <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-            <h4 className="text-lg font-semibold mb-4">🔍 Search Buildings</h4>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Building Name or Code
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., AB, Bahen, or Astronomy..."
-                value={searchTerm}
-                onChange={(e) => searchBuildings(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Building List */}
-            <div className="max-h-96 overflow-y-auto">
-              <h5 className="text-sm font-medium text-gray-700 mb-2">
-                Available Buildings ({filteredBuildings.length})
-              </h5>
-              <div className="space-y-2">
-                {filteredBuildings.map((building, index) => {
-                  const code = building.building_name.split(" - ")[0];
-                  const name = building.building_name.split(" - ")[1] || "";
-                  const isSelected =
-                    selectedBuilding && selectedBuilding.id === building.id;
-
-                  return (
-                    <div
-                      key={building.id || index}
-                      onClick={() => {
-                        setSelectedBuilding(building);
-                        showBuildingOnMap(building);
-                      }}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-blue-100 border-2 border-blue-500"
-                          : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono mr-2">
-                              {code}
-                            </span>
-                            {name}
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            Rooms: {building.total_rooms} | Available:{" "}
-                            {building.available_rooms}
-                          </div>
-                        </div>
-                        <div
-                          className={`w-3 h-3 rounded-full ${isSelected ? "bg-blue-500" : "bg-gray-300"}`}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Buildings Table */}
+        <div className="bg-white shadow-lg rounded-xl border border-gray-200">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h4 className="text-lg font-semibold">
+                🏢 Buildings
+                <span className="text-sm font-normal text-gray-600 ml-2">
+                  ({filteredAndSortedBuildings().length} found)
+                </span>
+              </h4>
+              <div className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages()}
               </div>
             </div>
+          </div>
 
-            {/* Quick Stats */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <h5 className="text-sm font-medium text-gray-700 mb-2">
-                📊 Campus Overview
-              </h5>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-blue-50 p-2 rounded">
-                  <div className="font-medium text-blue-600">
-                    {buildings.length}
-                  </div>
-                  <div className="text-gray-600">Total Buildings</div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Building
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("total_rooms")}
+                  >
+                    Rooms <SortIcon column="total_rooms" />
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("available_rooms")}
+                  >
+                    Available <SortIcon column="available_rooms" />
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("total_capacity")}
+                  >
+                    Capacity <SortIcon column="total_capacity" />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {paginatedBuildings().map((building, index) => {
+                  const code = building.building_name.split(" - ")[0];
+                  const name = building.building_name.split(" - ")[1] || "";
+                  const isSelected = selectedBuilding && selectedBuilding.id === building.id;
+
+                  return (
+                    <tr
+                      key={building.id || index}
+                      onClick={() => handleBuildingSelect(building)}
+                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${
+                        isSelected ? "bg-blue-100 border-l-4 border-blue-500" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                {code}
+                              </span>
+                              {name}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {building.total_rooms}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          building.available_rooms > 0
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {building.available_rooms}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {building.total_capacity?.toLocaleString() || "N/A"}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuildingSelect(building);
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          🗺️ Map
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, filteredAndSortedBuildings().length)} of{" "}
+              {filteredAndSortedBuildings().length} buildings
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages(), currentPage + 1))}
+                disabled={currentPage === totalPages()}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="grid grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {buildings.length}
                 </div>
-                <div className="bg-green-50 p-2 rounded">
-                  <div className="font-medium text-green-600">
-                    {buildings.reduce((sum, b) => sum + b.total_rooms, 0)}
-                  </div>
-                  <div className="text-gray-600">Total Rooms</div>
+                <div className="text-xs text-gray-600">Total Buildings</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {buildings.reduce((sum, b) => sum + (b.total_rooms || 0), 0)}
                 </div>
+                <div className="text-xs text-gray-600">Total Rooms</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {buildings.reduce((sum, b) => sum + (b.available_rooms || 0), 0)}
+                </div>
+                <div className="text-xs text-gray-600">Available Rooms</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {buildings.reduce((sum, b) => sum + (b.total_capacity || 0), 0).toLocaleString()}
+                </div>
+                <div className="text-xs text-gray-600">Total Capacity</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Map Panel */}
-        <div className="lg:col-span-2">
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-              <h4 className="text-lg font-semibold">
-                🗺️ Campus Map
-                {selectedBuilding && (
-                  <span className="text-sm font-normal text-gray-600 ml-2">
-                    - {selectedBuilding.building_name}
-                  </span>
-                )}
-              </h4>
-            </div>
-            <div
-              ref={mapRef}
-              className="w-full h-96 lg:h-[500px]"
-              style={{ minHeight: "400px" }}
-            >
-              {/* Leaflet map will render here */}
-            </div>
-            <div className="p-4 bg-gray-50 text-xs text-gray-600">
-              <p>
-                <strong>Instructions:</strong> Search for a building by name or
-                code in the search box, or click on any building in the list to
-                see its location on the map. Building markers show the building
-                code and provide detailed information when clicked.
-              </p>
-            </div>
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+          <div className="p-4 border-b border-gray-200">
+            <h4 className="text-lg font-semibold">
+              🗺️ Campus Map
+              {selectedBuilding && (
+                <span className="text-sm font-normal text-gray-600 ml-2">
+                  - {selectedBuilding.building_name}
+                </span>
+              )}
+            </h4>
+          </div>
+          <div
+            ref={mapRef}
+            className="w-full h-96 xl:h-[600px]"
+            style={{ minHeight: "500px" }}
+          >
+            {/* Leaflet map will render here */}
+          </div>
+          <div className="p-4 bg-gray-50 text-xs text-gray-600">
+            <p className="mb-2">
+              <strong>Instructions:</strong> Click on any building in the table to see its location on the map.
+              Building markers show the building code and provide detailed information when clicked.
+            </p>
+            <p>
+              <strong>Legend:</strong> 🔵 Campus boundary | 🏛️ Buildings | 📍 Selected building
+            </p>
           </div>
         </div>
       </div>
@@ -418,27 +588,30 @@ function BuildingLocator() {
 
                 <div className="bg-purple-50 p-3 rounded-lg">
                   <div className="text-2xl font-bold text-purple-600">
-                    {selectedBuilding.total_capacity}
+                    {selectedBuilding.total_capacity?.toLocaleString() || "N/A"}
                   </div>
                   <div className="text-sm text-gray-600">Total Capacity</div>
                 </div>
 
                 <div className="bg-orange-50 p-3 rounded-lg">
                   <div className="text-2xl font-bold text-orange-600">
-                    {selectedBuilding.total_testing_capacity}
+                    {selectedBuilding.total_testing_capacity?.toLocaleString() || "N/A"}
                   </div>
                   <div className="text-sm text-gray-600">Testing Capacity</div>
                 </div>
 
-                <div className="pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-gray-200 space-y-2">
                   <button
-                    onClick={() => {
-                      setSelectedBuilding(null);
-                      // Could navigate to Building Management tab
-                    }}
+                    onClick={() => showBuildingOnMap(selectedBuilding)}
                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
                   >
-                    View in Building Management
+                    🗺️ Center on Map
+                  </button>
+                  <button
+                    onClick={() => setSelectedBuilding(null)}
+                    className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+                  >
+                    Close Details
                   </button>
                 </div>
               </div>

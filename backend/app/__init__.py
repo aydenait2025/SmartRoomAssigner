@@ -12,7 +12,7 @@ from .config import Config
 from .extensions import db, login_manager, oauth
 
 # Import models for database creation
-from .models import user, student, building, exam, assignment
+# from .models import user, student, building, exam, assignment  # Commented out as models are inline
 
 def create_app(config_class=None):
     """Application factory pattern"""

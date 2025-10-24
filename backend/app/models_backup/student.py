@@ -13,11 +13,11 @@ class Student(db.Model):
     gpa = db.Column(db.Float)
 
     # Relationships
-    assignments = db.relationship('Assignment', backref='student', lazy=True)
+    # Note: assignments removed to avoid backref conflict with Assignment.student
 
     # Link to user account (for student users)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    user = db.relationship('User', backref='student_profile_backref', lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user = db.relationship('User', backref='student_profiles', lazy=True)
 
     def __repr__(self):
         return f"<Student {self.student_id}: {self.first_name} {self.last_name}>"

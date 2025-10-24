@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import AdminLayout from "./AdminLayout";
 import AssignmentTab from "./AssignmentTab";
 
 function AdminDashboard() {
   const navigate = useNavigate();
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [stats, setStats] = useState({
+    total_buildings: 36,
+    total_rooms: 3,
+    available_rooms: 3,
+    total_students: 0,
+    active_exams: 0,
+    assigned_students: 0,
+    unassigned_students: 0,
+  });
+  const [loading, setLoading] = useState(true);
   const [criticalAlerts] = useState([
     {
       id: 1,
@@ -41,12 +52,23 @@ function AdminDashboard() {
     },
   ]);
 
-  // Simulate real-time updates
+  // Fetch real-time dashboard stats
   useEffect(() => {
-    const interval = setInterval(() => {
-      // In a real app, this would fetch live data
-      // For demo, we keep the alerts static
-    }, 30000);
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('/dashboard/stats');
+        setStats(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -124,10 +146,9 @@ function AdminDashboard() {
               <p className="text-sm font-medium text-gray-600">
                 Total Buildings
               </p>
-              <p className="text-2xl font-light text-gray-900">12</p>
-              <span className="text-xs text-green-600 font-medium">
-                +2 this month
-              </span>
+              <p className="text-2xl font-light text-gray-900">
+                {loading ? "..." : stats.total_buildings}
+              </p>
             </div>
             <div className="text-indigo-500 text-2xl">🏢</div>
           </div>
@@ -142,9 +163,11 @@ function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Rooms</p>
-              <p className="text-2xl font-light text-gray-900">248</p>
+              <p className="text-2xl font-light text-gray-900">
+                {loading ? "..." : stats.total_rooms}
+              </p>
               <span className="text-xs text-green-600 font-medium">
-                15 available now
+                {loading ? "" : `${stats.available_rooms} available`}
               </span>
             </div>
             <div className="text-green-500 text-2xl">🚪</div>
@@ -160,9 +183,11 @@ function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Exams</p>
-              <p className="text-2xl font-light text-gray-900">18</p>
+              <p className="text-2xl font-light text-gray-900">
+                {loading ? "..." : stats.active_exams}
+              </p>
               <span className="text-xs text-yellow-600 font-medium">
-                3 pending assignment
+                Live count
               </span>
             </div>
             <div className="text-blue-500 text-2xl">📚</div>
@@ -180,9 +205,11 @@ function AdminDashboard() {
               <p className="text-sm font-medium text-gray-600">
                 Total Students
               </p>
-              <p className="text-2xl font-light text-gray-900">1,234</p>
+              <p className="text-2xl font-light text-gray-900">
+                {loading ? "..." : stats.total_students.toLocaleString()}
+              </p>
               <span className="text-xs text-purple-600 font-medium">
-                27 unassigned today
+                {loading ? "" : `${stats.unassigned_students} unassigned`}
               </span>
             </div>
             <div className="text-purple-500 text-2xl">👥</div>
