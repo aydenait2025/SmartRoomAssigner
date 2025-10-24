@@ -50,23 +50,10 @@ This directory contains all database-related files for SmartRoomAssigner, includ
 
 ## 🚀 Deployment Recommendations
 
-### **For Small/Medium Academic Institutions:**
+### **Recommended Setup:**
 ```bash
-# Use Enhanced Schema - Production ready with all essential features
-psql -d your_database < db/enhanced_database_schema.sql
-```
-
-### **For Large Universities/Multi-Campus:**
-```bash
-# Use Enterprise Schema - Full academic management system
+# Use Enterprise Schema - Full academic management system (currently configured in models)
 psql -d your_database < db/ultimate_enterprise_schema.sql
-```
-
-### **For Legacy Systems/Upgrading:**
-```bash
-# Use Original Schema - Maintain backward compatibility
-psql -d your_database < db/database_schema.sql
-# Then migrate to Enhanced/Enterprise as needed
 ```
 
 ## 📊 Database Architecture Overview
