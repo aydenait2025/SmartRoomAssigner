@@ -314,7 +314,7 @@ function Reports() {
 
   // Unassigned students pagination
   const [unassignedCurrentPage, setUnassignedCurrentPage] = useState(1);
-  const [unassignedPerPage] = useState(5); // Show 5 unassigned students per page
+  const [unassignedPerPage] = useState(10); // Show 10 unassigned students per page
 
   // Room utilization pagination (NEW)
   const [roomCurrentPage, setRoomCurrentPage] = useState(1);
