@@ -316,6 +316,10 @@ function Reports() {
   const [unassignedCurrentPage, setUnassignedCurrentPage] = useState(1);
   const [unassignedPerPage] = useState(5); // Show 5 unassigned students per page
 
+  // Room utilization pagination (NEW)
+  const [roomCurrentPage, setRoomCurrentPage] = useState(1);
+  const [roomPerPage] = useState(15); // Show 15 rooms per page for better UX
+
   const fetchData = async (page = 1) => {
     try {
       // Note: Currently no assignments endpoint exists, so we'll work with available data
@@ -440,6 +444,19 @@ function Reports() {
     unassignedStartIndex,
     unassignedStartIndex + unassignedPerPage,
   );
+
+  // Paginate room utilization report (NEW)
+  const roomTotalPages = Math.ceil(studentsPerRoom.length / roomPerPage);
+  const roomStartIndex = (roomCurrentPage - 1) * roomPerPage;
+  const paginatedRooms = studentsPerRoom.slice(
+    roomStartIndex,
+    roomStartIndex + roomPerPage,
+  );
+
+  // Reset room pagination when filters change
+  useEffect(() => {
+    setRoomCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   const handleExportCSV = async () => {
     try {
@@ -644,7 +661,7 @@ function Reports() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {studentsPerRoom.map((roomStat, index) => {
+                  {paginatedRooms.map((roomStat, index) => {
                     const utilization =
                       roomStat.capacity > 0
                         ? (roomStat.assigned_count / roomStat.capacity) * 100
@@ -718,6 +735,42 @@ function Reports() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Room Pagination Controls (NEW) */}
+          {roomTotalPages > 1 && (
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex justify-center items-center space-x-4">
+                <button
+                  onClick={() =>
+                    setRoomCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={roomCurrentPage === 1}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  ← Previous
+                </button>
+                <span className="text-sm text-gray-700 bg-white px-3 py-1 rounded border">
+                  Page {roomCurrentPage} of {roomTotalPages} ({studentsPerRoom.length} total filtered rooms)
+                </span>
+                <button
+                  onClick={() =>
+                    setRoomCurrentPage((prev) =>
+                      Math.min(roomTotalPages, prev + 1),
+                    )
+                  }
+                  disabled={roomCurrentPage === roomTotalPages}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  Next →
+                </button>
+              </div>
+              <div className="text-center mt-2">
+                <span className="text-xs text-gray-500">
+                  Showing {(roomCurrentPage - 1) * roomPerPage + 1} to {Math.min(roomCurrentPage * roomPerPage, studentsPerRoom.length)} rooms
+                </span>
+              </div>
             </div>
           )}
         </div>
