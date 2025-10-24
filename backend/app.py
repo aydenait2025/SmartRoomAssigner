@@ -282,7 +282,7 @@ def init_db_route():
 @app.route('/seed-buildings')
 @login_required
 def seed_buildings():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     # UofT Buildings data - each building will get default rooms
@@ -352,7 +352,7 @@ def seed_buildings():
 @app.route('/import-buildings', methods=['POST'])
 @login_required
 def import_buildings():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     if 'file' not in request.files:
@@ -604,7 +604,7 @@ def get_current_user():
 @app.route('/upload-rooms', methods=['POST'])
 @login_required
 def upload_rooms():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     if 'file' not in request.files and 'text' not in request.form:
@@ -681,7 +681,7 @@ def upload_rooms():
 @app.route('/save-rooms', methods=['POST'])
 @login_required
 def save_rooms():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     rooms_data = request.json
@@ -719,7 +719,7 @@ def save_rooms():
 @app.route('/upload-students', methods=['POST'])
 @login_required
 def upload_students():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     if 'file' not in request.files and 'text' not in request.form:
@@ -781,7 +781,7 @@ def upload_students():
 @app.route('/save-students', methods=['POST'])
 @login_required
 def save_students():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     students_data = request.json
@@ -809,7 +809,7 @@ def save_students():
 @app.route('/students/bulk-import', methods=['POST'])
 @login_required
 def bulk_import_students():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     if 'file' not in request.files:
@@ -901,7 +901,7 @@ def bulk_import_students():
 @app.route('/assign-students', methods=['POST'])
 @login_required
 def assign_students():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     try:
@@ -992,7 +992,7 @@ def student_assignment():
 @app.route('/export-assignments-csv', methods=['GET'])
 @login_required
 def export_assignments_csv():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     from flask import make_response
@@ -1023,7 +1023,7 @@ def export_assignments_csv():
 @app.route('/export-assignments-pdf', methods=['GET'])
 @login_required
 def export_assignments_pdf():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     # This would require a PDF generation library like ReportLab or FPDF
@@ -1183,7 +1183,7 @@ def get_buildings():
 @app.route('/rooms', methods=['POST'])
 @login_required
 def create_room():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -1225,7 +1225,7 @@ def create_room():
 @app.route('/rooms/<int:room_id>', methods=['PUT'])
 @login_required
 def update_room(room_id):
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -1260,7 +1260,7 @@ def update_room(room_id):
 @app.route('/rooms/<int:room_id>', methods=['DELETE'])
 @login_required
 def delete_room(room_id):
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     try:
@@ -1278,7 +1278,7 @@ def delete_room(room_id):
 @app.route('/students', methods=['POST'])
 @login_required
 def create_student():
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -1311,7 +1311,7 @@ def create_student():
 @app.route('/students/<int:student_id>', methods=['PUT'])
 @login_required
 def update_student(student_id):
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -1344,7 +1344,7 @@ def update_student(student_id):
 @app.route('/students/<int:student_id>', methods=['DELETE'])
 @login_required
 def delete_student(student_id):
-    if current_user.role != 'admin':
+    if current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
 
     try:
