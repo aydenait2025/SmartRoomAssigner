@@ -318,7 +318,7 @@ function Reports() {
 
   // Room utilization pagination (NEW)
   const [roomCurrentPage, setRoomCurrentPage] = useState(1);
-  const [roomPerPage] = useState(15); // Show 15 rooms per page for better UX
+  const [roomPerPage] = useState(10); // Show 10 rooms per page for optimal UX
 
   const fetchData = async (page = 1) => {
     try {
