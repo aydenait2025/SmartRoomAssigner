@@ -1,0 +1,31 @@
+course_code,course_name,department,expected_students
+csca08,Introduction to Computer Science I,Computer Science,150
+csca48,Introduction to Computer Science II,Computer Science,150
+csca20,Computer Science for the Sciences,Computer Science,100
+csca67,Discrete Mathematics for Computer Scientists,Mathematics,120
+cscb07,Software Design,Computer Science,180
+cscb09,Software Tools and Systems Programming,Computer Science,160
+cscb20,Introduction to Database and Web Applications,Computer Science,140
+cscb36,Introduction to the Theory of Computation,Computer Science,100
+cscb58,Computer Organization,Computer Science,130
+cscb63,Design and Analysis of Data Structures,Computer Science,170
+cscc01,Introduction to Software Engineering,Computer Science,150
+cscc09,Programming on the Web,Computer Science,120
+cscc10,Human-Computer Interaction,Computer Science,110
+cscc11,Introduction to Machine Learning and Data Mining,Computer Science,130
+cscc24,Principles of Programming Languages,Computer Science,100
+cscc37,Introduction to Numerical Algorithms for Computational Mathematics,Mathematics,80
+cscc43,Introduction to Databases,Computer Science,140
+cscc46,Social and Information Networks,Computer Science,90
+cscc63,Computability and Computational Complexity,Computer Science,80
+cscc69,Operating Systems,Computer Science,120
+cscc73,Algorithm Design and Analysis,Computer Science,130
+cscc85,Introduction to Embedded Systems,Computer Science,100
+cscd01,Engineering Large Software Systems,Computer Science,110
+cscd03,Social Impact of Information Technology,Computer Science,120
+cscd18,Computer Graphics,Computer Science,100
+cscd37,Analysis of Numerical Algorithmns for Computational Mathematics,Mathematics,70
+cscd43,Database System Technology,Computer Science,90
+cscd58,Computer Networks,Computer Science,140
+cscd70,Compiler Optimization,Computer Science,80
+cscd84,Artifical Intelligence,Computer Science,150
