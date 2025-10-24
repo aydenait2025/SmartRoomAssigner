@@ -1033,7 +1033,7 @@ def export_assignments_pdf():
 @app.route('/rooms', methods=['GET'])
 @login_required
 def get_rooms():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
     page = request.args.get('page', 1, type=int)
@@ -1062,7 +1062,7 @@ def get_rooms():
 @app.route('/students', methods=['GET'])
 @login_required
 def get_students():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
     page = request.args.get('page', 1, type=int)
