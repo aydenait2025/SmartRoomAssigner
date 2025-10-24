@@ -1090,7 +1090,7 @@ def get_students():
 @app.route('/assignments', methods=['GET'])
 @login_required
 def get_assignments():
-    if current_user.role != 'admin':
+    if not hasattr(current_user, 'role') or current_user.role.name != 'admin':
         return jsonify({"error": "Unauthorized"}), 403
     
     page = request.args.get('page', 1, type=int)
