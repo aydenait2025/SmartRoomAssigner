@@ -318,18 +318,17 @@ function Reports() {
 
   const fetchData = async (page = 1) => {
     try {
-      const [assignmentsRes, roomsRes, studentsRes] = await Promise.all([
-        axios.get(
-          `http://localhost:5000/assignments?page=${page}&per_page=${perPage}`,
-          { withCredentials: true },
-        ),
-        axios.get("http://localhost:5000/rooms", { withCredentials: true }), // Fetch all rooms
-        axios.get("http://localhost:5000/students", { withCredentials: true }), // Fetch all students
+      // Note: Currently no assignments endpoint exists, so we'll work with available data
+      const [roomsRes, studentsRes] = await Promise.all([
+        axios.get(`/rooms?per_page=1000`, { withCredentials: true }), // Fetch all rooms
+        axios.get(`/students?per_page=1000`, { withCredentials: true }), // Fetch all students
       ]);
-      setAssignments(assignmentsRes.data.assignments);
-      setCurrentPage(assignmentsRes.data.current_page);
-      setTotalPages(assignmentsRes.data.total_pages);
-      setTotalItems(assignmentsRes.data.total_items);
+
+      // For now, simulate empty assignments until assignment endpoint exists
+      setAssignments([]);
+      setCurrentPage(1);
+      setTotalPages(0);
+      setTotalItems(0);
       setRooms(roomsRes.data.rooms);
       setStudents(studentsRes.data.students);
     } catch (err) {
@@ -347,10 +346,7 @@ function Reports() {
       roomStats[room.id] = {
         building_name: room.building_name,
         room_number: room.room_number,
-        capacity:
-          room.testing_capacity > 0
-            ? room.testing_capacity
-            : room.room_capacity,
+        capacity: room.capacity, // Use the standard capacity field
         assigned_count: 0,
         assigned_students: [],
       };
@@ -447,20 +443,8 @@ function Reports() {
 
   const handleExportCSV = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/export-assignments-csv",
-        {
-          withCredentials: true,
-          responseType: "blob", // Important for downloading files
-        },
-      );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "room_assignments.csv");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      // Note: CSV export for reports is not yet implemented on backend
+      setError("CSV export for reports is not yet implemented. Use Student Management for student exports.");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to export CSV");
     }
@@ -767,7 +751,7 @@ function Reports() {
                       Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Student ID
+                      Email
                     </th>
                   </tr>
                 </thead>
@@ -779,12 +763,12 @@ function Reports() {
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {student.first_name} {student.last_name}
+                          {student.name}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full text-center font-mono">
-                          {student.student_id}
+                          {student.email}
                         </div>
                       </td>
                     </tr>
