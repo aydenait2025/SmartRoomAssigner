@@ -18,6 +18,9 @@ function CourseManagement() {
   const [sortBy, setSortBy] = useState("name"); // 'name', 'code', 'students', 'status'
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc', 'desc'
 
+  // Departments state for dropdown
+  const [departments, setDepartments] = useState([]);
+
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -25,31 +28,55 @@ function CourseManagement() {
   const [newCourse, setNewCourse] = useState({
     course_code: "",
     course_name: "",
-    department: "",
+    department_id: "", // Changed to department_id
     expected_students: 0,
   });
 
   const fetchCourses = async (page = 1) => {
     try {
       setLoading(true);
+      // Fetch all courses to support client-side filtering and pagination
+      // Note: In production, consider backend filtering pagination for better performance
       const response = await axios.get(
-        `/courses?page=${page}&per_page=${perPage}`,
+        `/courses?per_page=1000`, // Fetch all courses for client-side filtering
         { withCredentials: true },
       );
-      setCourses(response.data.courses);
-      setCurrentPage(response.data.current_page);
-      setTotalPages(response.data.total_pages);
-      setTotalItems(response.data.total_items);
+      setCourses(response.data.courses || []);
+      setTotalItems(response.data.courses ? response.data.courses.length : 0);
+      // We'll handle pagination client-side for better filtering UX
+      setTotalPages(Math.ceil((response.data.courses || []).length / perPage));
     } catch (err) {
       setError(err.response?.data?.error || "");
+      setCourses([]);
+      setTotalItems(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch departments for dropdown
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get("/departments", { withCredentials: true });
+      setDepartments(response.data.departments || []);
+    } catch (err) {
+      console.error("Failed to fetch departments:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, []); // Fetch once, since we now paginate client-side
+
+  useEffect(() => {
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   const handleAddCourse = async () => {
     try {
@@ -65,7 +92,7 @@ function CourseManagement() {
       setNewCourse({
         course_code: "",
         course_name: "",
-        department: "",
+        department_id: "",
         expected_students: 0,
       });
       fetchCourses();
@@ -110,7 +137,10 @@ function CourseManagement() {
   };
 
   const openEditModal = (course) => {
-    setEditingCourse({ ...course });
+    setEditingCourse({
+      ...course,
+      department_id: course.department_id || "" // Ensure department_id is set
+    });
     setShowEditModal(true);
   };
 
@@ -177,6 +207,19 @@ function CourseManagement() {
 
   const filteredCourses = getFilteredCourses();
 
+  // Paginate filtered courses
+  const getPaginatedCourses = () => {
+    const startIndex = (currentPage - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    return filteredCourses.slice(startIndex, endIndex);
+  };
+
+  const paginatedCourses = getPaginatedCourses();
+  const filteredTotalPages = Math.ceil(filteredCourses.length / perPage);
+
+  // File input ref for import (must be at top level, before any conditional returns)
+  const fileInputRef = React.useRef(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -185,36 +228,124 @@ function CourseManagement() {
     );
   }
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvHeaders = "course_code,course_name,department,expected_students\n";
+    const csvContent = csvHeaders;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'courses_template.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      setError("Please select a CSV file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setError("");
+      setMessage("");
+      setLoading(true);
+
+      const response = await axios.post('/courses/import-csv', formData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setMessage(`Courses imported successfully! Added ${response.data.success} courses.`);
+      fetchCourses(); // Refresh the list
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to import courses");
+    } finally {
+      setLoading(false);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <AdminLayout title="📚 Course Management">
-      <div className="flex justify-end space-x-2 mb-6">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-        >
-          ➕ Add New Course
-        </button>
-        <button
-          onClick={() => {
-            /* TODO: Export functionality */
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
-        >
-          📊 Export Data
-        </button>
+      <div className="flex items-center justify-between mb-6">
+        <div className="text-sm text-gray-600">
+          Manage courses, enrollment, and assignment analytics
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleDownloadTemplate}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            📋 Download Template
+          </button>
+          <button
+            onClick={handleImportClick}
+            disabled={loading}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            📥 Upload CSV
+          </button>
+          <button
+            onClick={() => window.open('/courses/export-csv', '_blank')}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            📊 Export CSV
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            ➕ Add Course
+          </button>
+        </div>
       </div>
+
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleFileChange}
+        className="hidden"
+      />
 
       {message && <p className="text-green-500 mb-4">{message}</p>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Summary Stats */}
       <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div
+            className="bg-blue-50 p-4 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+            onClick={() => setStatusFilter('all')}
+          >
             <div className="text-2xl font-bold text-blue-600">{totalItems}</div>
             <div className="text-sm text-gray-600">Total Courses</div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+          <div
+            className="bg-green-50 p-4 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+            onClick={() => setStatusFilter('assigned')}
+          >
             <div className="text-2xl font-bold text-green-600">
               {
                 courses.filter(
@@ -224,7 +355,10 @@ function CourseManagement() {
             </div>
             <div className="text-sm text-gray-600">Fully Assigned</div>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+          <div
+            className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-100 transition-colors"
+            onClick={() => setStatusFilter('unassigned')}
+          >
             <div className="text-2xl font-bold text-yellow-600">
               {
                 courses.filter((c) => c.assigned_students < c.expected_students)
@@ -232,6 +366,17 @@ function CourseManagement() {
               }
             </div>
             <div className="text-sm text-gray-600">Partially Assigned</div>
+          </div>
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <div className="text-2xl font-bold text-orange-600">
+              {courses.filter((c) => c.assigned_students < c.expected_students).length > 0 ?
+                Math.round(
+                  (courses.filter((c) => c.assigned_students >= c.expected_students).length /
+                   courses.length) * 100
+                ) : 100}
+              %
+            </div>
+            <div className="text-sm text-gray-600">Courses Assigned</div>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <div className="text-2xl font-bold text-purple-600">
@@ -304,7 +449,7 @@ function CourseManagement() {
 
       {/* Courses Table */}
       <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
-        {courses.length === 0 ? (
+        {filteredCourses.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-6xl mb-4">📚</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -325,31 +470,31 @@ function CourseManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Course Code
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Course Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Department
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Expected Students
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Assigned Students
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Seating Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCourses.map((course, index) => {
+                {paginatedCourses.map((course, index) => {
                   const isFullyAssigned =
                     course.assigned_students >= course.expected_students;
                   const assignmentRate =
@@ -366,73 +511,71 @@ function CourseManagement() {
                       key={course.id}
                       className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 bg-blue-100 px-3 py-1 rounded-full font-mono">
-                          {course.course_code}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {course.course_name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full">
-                          {course.department}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {course.expected_students}
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full font-mono">
+                        {course.course_code}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {course.course_name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                        {course.department}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {course.expected_students}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        {course.assigned_students}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-0.5 ${
+                            isFullyAssigned
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {isFullyAssigned ? "✓" : "⏳"}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          {course.assigned_students}
+                        <div className="w-12 bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full ${isFullyAssigned ? "bg-green-500" : "bg-yellow-500"}`}
+                            style={{
+                              width: `${Math.min(assignmentRate, 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          {assignmentRate}%
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex flex-col items-center">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mb-1 ${
-                              isFullyAssigned
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {isFullyAssigned
-                              ? "✅ Fully Assigned"
-                              : "⏳ Partially Assigned"}
-                          </span>
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${isFullyAssigned ? "bg-green-500" : "bg-yellow-500"}`}
-                              style={{
-                                width: `${Math.min(assignmentRate, 100)}%`,
-                              }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-600 mt-1">
-                            {assignmentRate}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => openEditModal(course)}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCourse(course.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      </td>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => openEditModal(course)}
+                          className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCourse(course.id)}
+                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
                     </tr>
                   );
                 })}
@@ -443,23 +586,21 @@ function CourseManagement() {
       </div>
 
       {/* Pagination */}
-      {courses.length > 0 && (
+      {filteredTotalPages > 1 && (
         <div className="mt-6 flex justify-center items-center space-x-4">
           <button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
           >
             ← Previous
           </button>
           <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages} ({totalItems} total courses)
+            Page {currentPage} of {filteredTotalPages} ({filteredCourses.length} filtered courses)
           </span>
           <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-            }
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(Math.min(filteredTotalPages, currentPage + 1))}
+            disabled={currentPage === filteredTotalPages}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
           >
             Next →
@@ -505,15 +646,20 @@ function CourseManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Department
                 </label>
-                <input
-                  type="text"
-                  value={newCourse.department}
+                <select
+                  value={newCourse.department_id}
                   onChange={(e) =>
-                    setNewCourse({ ...newCourse, department: e.target.value })
+                    setNewCourse({ ...newCourse, department_id: e.target.value })
                   }
                   className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-                  placeholder="e.g., Computer Science"
-                />
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.department_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -593,17 +739,23 @@ function CourseManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Department
                 </label>
-                <input
-                  type="text"
-                  value={editingCourse.department}
+                <select
+                  value={editingCourse.department_id || ""}
                   onChange={(e) =>
                     setEditingCourse({
                       ...editingCourse,
-                      department: e.target.value,
+                      department_id: e.target.value,
                     })
                   }
                   className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-                />
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.department_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
