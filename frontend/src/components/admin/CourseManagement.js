@@ -285,12 +285,29 @@ function CourseManagement() {
     }
   };
 
+  const handleExportCsv = () => {
+    const headers = "course_code,course_name,department,expected_students,assigned_students\n";
+    const csvContent = headers + filteredCourses.map(course =>
+      `"${course.course_code}","${course.course_name}","${course.department}",${course.expected_students},${course.assigned_students}`
+    ).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'courses_export.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <AdminLayout title="📚 Course Management">
-      <div className="flex items-center justify-between mb-6">
-        <div className="text-sm text-gray-600">
-          Manage courses, enrollment, and assignment analytics
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <div className="flex space-x-3">
           <button
             onClick={handleDownloadTemplate}
@@ -306,14 +323,14 @@ function CourseManagement() {
             📥 Upload CSV
           </button>
           <button
-            onClick={() => window.open('/courses/export-csv', '_blank')}
+            onClick={handleExportCsv}
             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             📊 Export CSV
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             ➕ Add Course
           </button>
@@ -512,7 +529,7 @@ function CourseManagement() {
                       className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}
                     >
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full font-mono">
+                      <div className="text-sm font-medium text-gray-900">
                         {course.course_code}
                       </div>
                     </td>
@@ -522,12 +539,12 @@ function CourseManagement() {
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                      <div className="text-sm font-medium text-gray-900">
                         {course.department}
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span className="text-sm font-medium text-gray-900">
                         {course.expected_students}
                       </span>
                     </td>
@@ -538,15 +555,6 @@ function CourseManagement() {
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
                       <div className="flex flex-col items-center">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-0.5 ${
-                            isFullyAssigned
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {isFullyAssigned ? "✓" : "⏳"}
-                        </span>
                         <div className="w-12 bg-gray-200 rounded-full h-1.5">
                           <div
                             className={`h-1.5 rounded-full ${isFullyAssigned ? "bg-green-500" : "bg-yellow-500"}`}
@@ -564,13 +572,13 @@ function CourseManagement() {
                       <div className="flex space-x-1">
                         <button
                           onClick={() => openEditModal(course)}
-                          className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                          className="px-2 py-1 text-sm"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => handleDeleteCourse(course.id)}
-                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                          className="px-2 py-1 text-sm"
                         >
                           🗑️
                         </button>

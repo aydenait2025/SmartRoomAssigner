@@ -9,9 +9,12 @@ bp = Blueprint('rooms', __name__)
 @bp.route('/rooms', methods=['GET'])
 @login_required
 def get_rooms():
-    """Get all rooms"""
+    """Get rooms with pagination and stats"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
     building_id = request.args.get('building_id', type=int)
     room_type = request.args.get('type', '')
+    status_filter = request.args.get('status', 'all')  # 'all', 'active', 'inactive'
 
     rooms_query = Room.query
 
@@ -21,8 +24,37 @@ def get_rooms():
     if room_type:
         rooms_query = rooms_query.filter_by(room_type=room_type)
 
-    rooms = rooms_query.all()
-    return jsonify({'rooms': [room.to_dict() for room in rooms]}), 200
+    # Apply status filter
+    if status_filter == 'active':
+        # Active: both is_active and is_bookable are True (or null, which we treat as True)
+        rooms_query = rooms_query.filter(
+            db.or_(Room.is_active.is_(None), Room.is_active == True),
+            db.or_(Room.is_bookable.is_(None), Room.is_bookable == True)
+        )
+    elif status_filter == 'inactive':
+        # Inactive: either is_active is False OR is_bookable is False
+        rooms_query = rooms_query.filter(
+            db.or_(Room.is_active == False, Room.is_bookable == False)
+        )
+
+    # Get paginated results
+    paginated_rooms = rooms_query.paginate(page=page, per_page=per_page, error_out=False)
+    rooms = paginated_rooms.items
+
+    # Calculate total active rooms (across all records, not just this page)
+    # Treat NULL values as True (since default is True)
+    total_active = Room.query.filter(
+        db.or_(Room.is_active.is_(None), Room.is_active == True),
+        db.or_(Room.is_bookable.is_(None), Room.is_bookable == True)
+    ).count()
+
+    return jsonify({
+        'rooms': [room.to_dict() for room in rooms],
+        'current_page': paginated_rooms.page,
+        'total_pages': paginated_rooms.pages,
+        'total_items': paginated_rooms.total,
+        'total_active': total_active
+    }), 200
 
 @bp.route('/rooms/<int:room_id>', methods=['GET'])
 @login_required

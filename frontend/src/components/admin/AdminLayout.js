@@ -12,10 +12,12 @@ function AdminLayout({ children, title = "Dashboard" }) {
   };
 
   const handleLogout = () => {
-    // Clear authentication data from localStorage
+    // Clear ALL authentication data from localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("rememberedUsername");
+    localStorage.removeItem("loginTime");
+    localStorage.removeItem("rememberMe");
 
     // Navigate to login page
     navigate("/login");

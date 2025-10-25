@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout";
 
@@ -11,14 +11,15 @@ function RoomManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [totalActive, setTotalActive] = useState(0);
   const perPage = 10;
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive'
   const [buildingFilter, setBuildingFilter] = useState("all"); // 'all', specific building
-  const [sortBy, setSortBy] = useState("building"); // 'building', 'room', 'capacity', 'exam'
-  const [sortOrder, setSortOrder] = useState("asc"); // 'asc', 'desc'
+  const [typeFilter, setTypeFilter] = useState("all"); // 'all', specific room type
+  const [sortBy, setSortBy] = useState("building"); // 'building', 'capacity', 'exam'
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -61,14 +62,21 @@ function RoomManagement() {
   const fetchRooms = async (page = 1) => {
     try {
       setLoading(true);
+      const params = new URLSearchParams({
+        page: page,
+        per_page: perPage,
+        status: statusFilter,  // Pass the current status filter to backend
+      });
+
       const response = await axios.get(
-        `/rooms?page=${page}&per_page=${perPage}`,
+        `/rooms?${params.toString()}`,
         { withCredentials: true },
       );
       setRooms(response.data.rooms);
       setCurrentPage(response.data.current_page);
       setTotalPages(response.data.total_pages);
       setTotalItems(response.data.total_items);
+      setTotalActive(response.data.total_active);
     } catch (err) {
       setError(err.response?.data?.error || "");
     } finally {
@@ -223,8 +231,8 @@ function RoomManagement() {
     return unique.sort();
   };
 
-  // Filter and sort rooms
-  const getFilteredRooms = () => {
+  // Filter and sort rooms with useMemo for proper reactivity
+  const filteredRooms = useMemo(() => {
     let filteredRooms = [...rooms];
 
     // Apply search filter
@@ -258,7 +266,14 @@ function RoomManagement() {
       );
     }
 
-    // Apply sorting
+    // Apply type filter
+    if (typeFilter !== "all") {
+      filteredRooms = filteredRooms.filter(
+        (room) => room.room_type === typeFilter,
+      );
+    }
+
+    // Apply sorting (always ascending)
     filteredRooms.sort((a, b) => {
       let aValue, bValue;
 
@@ -266,10 +281,6 @@ function RoomManagement() {
         case "building":
           aValue = a.building_name || "";
           bValue = b.building_name || "";
-          break;
-        case "room":
-          aValue = a.room_number || "";
-          bValue = b.room_number || "";
           break;
         case "capacity":
           aValue = a.capacity || 0;
@@ -283,15 +294,14 @@ function RoomManagement() {
           return 0;
       }
 
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      if (aValue < bValue) return -1;
+      if (aValue > bValue) return 1;
       return 0;
     });
 
     return filteredRooms;
-  };
+  }, [rooms, searchTerm, statusFilter, buildingFilter, typeFilter, sortBy]);
 
-  const filteredRooms = getFilteredRooms();
   const uniqueBuildings = getUniqueBuildings();
 
   if (loading) {
@@ -304,10 +314,7 @@ function RoomManagement() {
 
   return (
     <AdminLayout title="🚪 Room Management">
-      <div className="flex items-center justify-between mb-6">
-        <div className="text-sm text-gray-600">
-          Manage rooms, capacity settings, and booking configurations
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <div className="flex space-x-3">
           <button
             onClick={handleDownloadTemplate}
@@ -330,7 +337,7 @@ function RoomManagement() {
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             ➕ Add Room
           </button>
@@ -359,15 +366,15 @@ function RoomManagement() {
             <div className="text-2xl font-bold text-blue-600">{totalItems}</div>
             <div className="text-sm text-gray-600">Total Rooms</div>
           </div>
-          <div
-            className="bg-green-50 p-4 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
-            onClick={() => setStatusFilter('active')}
-          >
-            <div className="text-2xl font-bold text-green-600">
-              {rooms.filter((r) => r.is_active && r.is_bookable).length}
-            </div>
-            <div className="text-sm text-gray-600">Active Rooms</div>
-          </div>
+    <div
+      className="bg-green-50 p-4 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+      onClick={() => setStatusFilter('active')}
+    >
+      <div className="text-2xl font-bold text-green-600">
+        {totalActive}
+      </div>
+      <div className="text-sm text-gray-600">Active Rooms</div>
+    </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <div className="text-2xl font-bold text-purple-600">
               {rooms.reduce((sum, r) => sum + (r.capacity || 0), 0)}
@@ -378,7 +385,7 @@ function RoomManagement() {
             <div className="text-2xl font-bold text-orange-600">
               {rooms.reduce((sum, r) => sum + (r.exam_capacity || 0), 0)}
             </div>
-            <div className="text-sm text-gray-600">Testing Capacity</div>
+            <div className="text-sm text-gray-600">Exam Capacity</div>
           </div>
         </div>
       </div>
@@ -414,6 +421,21 @@ function RoomManagement() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type
+            </label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
+            >
+              <option value="all">All Types</option>
+              <option value="classroom">Classroom</option>
+              <option value="seminar">Seminar</option>
+              <option value="auditorium">Auditorium</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Sort By
             </label>
             <select
@@ -422,22 +444,8 @@ function RoomManagement() {
               className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
             >
               <option value="building">Building</option>
-              <option value="room">Room</option>
               <option value="capacity">Capacity</option>
               <option value="exam">Exam Capacity</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Order
-            </label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-            >
-              <option value="asc">↑ Ascending</option>
-              <option value="desc">↓ Descending</option>
             </select>
           </div>
         </div>
@@ -469,10 +477,10 @@ function RoomManagement() {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Room
+                    Building
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Building
+                    Room
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Capacity
@@ -498,41 +506,32 @@ function RoomManagement() {
                     className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}
                   >
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full font-mono text-center">
-                        {room.room_number}
+                      <div className="text-sm font-medium text-gray-900">
+                        {room.building_name}
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {room.building_code}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate max-w-32">
-                        {room.building_name?.replace(/^[A-Z]+ - /, '')}
+                        {room.room_number}
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span className="text-sm font-medium text-gray-900">
                         {room.capacity}
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      <span className="text-sm font-medium text-gray-900">
                         {room.exam_capacity}
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {room.room_type?.charAt(0) || 'L'}
+                      <span className="text-sm font-medium text-gray-900">
+                        {room.room_type || 'Lecture'}
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-0.5 ${
-                          room.is_active && room.is_bookable
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
+                      <span className="text-sm font-medium text-gray-900">
                         {room.is_active && room.is_bookable ? "✓" : "⏸"}
                       </span>
                     </td>
@@ -540,15 +539,15 @@ function RoomManagement() {
                       <div className="flex space-x-1">
                         <button
                           onClick={() => openEditModal(room)}
-                          className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                          className="px-2 py-1 text-sm"
                         >
-                          ✏
+                          ✏️
                         </button>
                         <button
                           onClick={() => handleDeleteRoom(room.id)}
-                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                          className="px-2 py-1 text-sm"
                         >
-                          🗑
+                          🗑️
                         </button>
                       </div>
                     </td>

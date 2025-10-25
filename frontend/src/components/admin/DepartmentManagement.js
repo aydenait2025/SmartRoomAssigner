@@ -9,16 +9,8 @@ function DepartmentManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const perPage = 10;
 
-  // Search and filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive'
-  const [sortBy, setSortBy] = useState("name"); // 'name', 'code', 'created'
-  const [sortOrder, setSortOrder] = useState("asc"); // 'asc', 'desc'
+
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -34,17 +26,14 @@ function DepartmentManagement() {
     headcount_limit: "",
   });
 
-  const fetchDepartments = async (page = 1) => {
+  const fetchDepartments = async () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `/departments?page=${page}&per_page=${perPage}`,
+        `/departments`,
         { withCredentials: true },
       );
       setDepartments(response.data.departments);
-      setCurrentPage(response.data.current_page);
-      setTotalPages(response.data.total_pages);
-      setTotalItems(response.data.total_items);
     } catch (err) {
       setError(err.response?.data?.error || "");
     } finally {
@@ -131,64 +120,7 @@ function DepartmentManagement() {
     setShowEditModal(true);
   };
 
-  // Filter and sort departments
-  const getFilteredDepartments = () => {
-    let filteredDepartments = [...departments];
 
-    // Apply search filter
-    if (searchTerm) {
-      filteredDepartments = filteredDepartments.filter(
-        (dept) =>
-          dept.department_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          dept.department_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (dept.faculty_name && dept.faculty_name.toLowerCase().includes(searchTerm.toLowerCase())),
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filteredDepartments = filteredDepartments.filter((dept) => {
-        switch (statusFilter) {
-          case "active":
-            return dept.is_active;
-          case "inactive":
-            return !dept.is_active;
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Apply sorting
-    filteredDepartments.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "name":
-          aValue = a.department_name;
-          bValue = b.department_name;
-          break;
-        case "code":
-          aValue = a.department_code;
-          bValue = b.department_code;
-          break;
-        case "created":
-          aValue = a.created_at;
-          bValue = b.created_at;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return filteredDepartments;
-  };
-
-  const filteredDepartments = getFilteredDepartments();
 
   // File input ref for import
   const fileInputRef = React.useRef(null);
@@ -260,9 +192,7 @@ function DepartmentManagement() {
   return (
     <AdminLayout title="🏫 Department Management">
       <div className="flex items-center justify-between mb-6">
-        <div className="text-sm text-gray-600">
-          Manage academic departments and their information
-        </div>
+        <div></div>
         <div className="flex space-x-3">
           <button
             onClick={handleDownloadTemplate}
@@ -304,105 +234,10 @@ function DepartmentManagement() {
       {message && <p className="text-green-500 mb-4">{message}</p>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Summary Stats */}
-      <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="text-2xl font-bold text-blue-600">{totalItems}</div>
-            <div className="text-sm text-gray-600">Total Departments</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="text-2xl font-bold text-green-600">
-              {
-                departments.filter(
-                  (dept) => dept.is_active,
-                ).length
-              }
-            </div>
-            <div className="text-sm text-gray-600">Active</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="text-2xl font-bold text-yellow-600">
-              {
-                departments.filter((dept) => !dept.is_active)
-                  .length
-              }
-            </div>
-            <div className="text-sm text-gray-600">Inactive</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <div className="text-2xl font-bold text-purple-600">
-              {
-                departments.filter((dept) => dept.courses && dept.courses.length > 0)
-                  .length
-              }
-            </div>
-            <div className="text-sm text-gray-600">With Courses</div>
-          </div>
-        </div>
-      </div>
 
-      {/* Search and Filter Controls */}
-      <div className="mb-6 p-4 bg-white shadow-lg rounded-xl border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <input
-              type="text"
-              placeholder="Department name, code, or faculty..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 px-4 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-            >
-              <option value="all">All Departments</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-            >
-              <option value="name">Department Name</option>
-              <option value="code">Department Code</option>
-              <option value="created">Created Date</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Order
-            </label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full h-10 px-4 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors duration-200"
-            >
-              <option value="asc">↑ Ascending</option>
-              <option value="desc">↓ Descending</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
       {/* Departments Table */}
-      <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200 max-w-4xl">
         {departments.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-6xl mb-4">🏫</div>
@@ -427,20 +262,8 @@ function DepartmentManagement() {
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Code
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-60">
                     Department Name
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Faculty
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Email Domain
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Headcount
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
@@ -448,13 +271,13 @@ function DepartmentManagement() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDepartments.map((department, index) => (
+                {departments.map((department, index) => (
                   <tr
                     key={department.id}
                     className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}
                   >
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full font-mono text-xs">
+                      <div className="text-sm font-medium text-gray-900">
                         {department.department_code}
                       </div>
                     </td>
@@ -463,50 +286,14 @@ function DepartmentManagement() {
                         {department.department_name}
                       </div>
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">
-                        {department.faculty_name || "—"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">
-                        {department.email_domain || "—"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">
-                        {department.current_headcount || 0}
-                        {department.headcount_limit && (
-                          <span className="text-gray-500">/{department.headcount_limit}</span>
-                        )}
-                      </div>
-                    </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          department.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
+                      <button
+                        onClick={() => openEditModal(department)}
+                        className="px-2 py-1 text-xs hover:bg-gray-50 transition-colors"
+                        title="Edit Department"
                       >
-                        {department.is_active ? "✅ Active" : "⏸️ Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => openEditModal(department)}
-                          className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDepartment(department.id)}
-                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                        ✏️
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -516,28 +303,7 @@ function DepartmentManagement() {
         )}
       </div>
 
-      {/* Pagination */}
-      {departments.length > 0 && (
-        <div className="mt-6 flex justify-center items-center space-x-4">
-          <button
-            onClick={() => fetchDepartments(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
-          >
-            ← Previous
-          </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages} ({totalItems} total departments)
-          </span>
-          <button
-            onClick={() => fetchDepartments(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
-          >
-            Next →
-          </button>
-        </div>
-      )}
+
 
       {/* Add Department Modal */}
       {showAddModal && (
