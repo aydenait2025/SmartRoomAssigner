@@ -12,7 +12,9 @@ function BuildingLocator() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState(null);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+const defaultItemsPerPage = 10;
+const [showAllMode, setShowAllMode] = useState(false);
 
   const [newBuilding, setNewBuilding] = useState({
     building_code: "",
@@ -122,6 +124,20 @@ function BuildingLocator() {
     }
   }, [currentPage, totalPages]);
 
+  const toggleShowAll = () => {
+    if (showAllMode) {
+      // Switch back to paginated view
+      setShowAllMode(false);
+      setItemsPerPage(defaultItemsPerPage);
+      setCurrentPage(1);
+    } else {
+      // Switch to show all view
+      setShowAllMode(true);
+      setItemsPerPage(filteredBuildings.length > 0 ? filteredBuildings.length : 1000);
+      setCurrentPage(1);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout title="🗺️ Building Locator">
@@ -150,9 +166,16 @@ function BuildingLocator() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             ➕ Add Building
+          </button>
+          <button
+            onClick={toggleShowAll}
+            disabled={loading}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            {showAllMode ? "📋 Show Less" : "📋 Show All"}
           </button>
           <button
             onClick={fetchBuildings}
@@ -167,21 +190,39 @@ function BuildingLocator() {
       {message && <p className="text-green-500 mb-4">{message}</p>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Buildings Table */}
-      <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h4 className="text-lg font-semibold">
-              🏢 Building Locations
-              <span className="text-sm font-normal text-gray-600 ml-2">
-                ({filteredBuildings.length} found • Focus: Location & Navigation)
-              </span>
-            </h4>
-            <div className="text-sm text-gray-600">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBuildings.length)} of {filteredBuildings.length} buildings
+      {/* Summary Stats */}
+      <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mb-6">
+        <div className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-3xl font-bold text-blue-600">{buildings.length}</div>
+              <div className="text-xs text-gray-600 font-medium">Total Buildings</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-green-600">
+                {buildings.filter(b => b.is_active).length}
+              </div>
+              <div className="text-xs text-gray-600 font-medium">Active Buildings</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-purple-600">
+                {buildings.filter(b => b.latitude && b.longitude).length}
+              </div>
+              <div className="text-xs text-gray-600 font-medium">With Coordinates</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-orange-600">
+                {buildings.filter(b => b.campus).length}
+              </div>
+              <div className="text-xs text-gray-600 font-medium">With Campus Info</div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Buildings Table */}
+      <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-200"></div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -299,13 +340,13 @@ function BuildingLocator() {
                     <td className="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-1">
                       <button
                         onClick={() => openEditModal(building)}
-                        className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                        className="px-2 py-1 text-xs hover:text-yellow-600 transition-colors"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleDeleteBuilding(building.id, building.display_name)}
-                        className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                        className="px-2 py-1 text-xs hover:text-red-600 transition-colors"
                       >
                         🗑️
                       </button>
@@ -340,33 +381,7 @@ function BuildingLocator() {
           </div>
         )}
 
-        {/* Summary Stats */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{buildings.length}</div>
-              <div className="text-xs text-gray-600">Total Buildings</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {buildings.filter(b => b.is_active).length}
-              </div>
-              <div className="text-xs text-gray-600">Active Buildings</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
-                {buildings.filter(b => b.latitude && b.longitude).length}
-              </div>
-              <div className="text-xs text-gray-600">With Coordinates</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {buildings.filter(b => b.campus).length}
-              </div>
-              <div className="text-xs text-gray-600">With Campus Info</div>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Create Building Modal */}

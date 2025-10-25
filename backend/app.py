@@ -1620,7 +1620,7 @@ def get_dashboard_stats():
 
         total_rooms = Room.query.count()
         available_rooms = Room.query.filter_by(is_bookable=True, is_active=True).count()
-        total_students = User.query.filter_by(role_id=2).count()  # Count students (role_id=2)
+        total_students = db.session.execute(db.text('SELECT COUNT(*) FROM students')).scalar()  # Count student records directly
         active_exams = 0  # Exam table schema mismatch - needs alignment with Exam model
         assigned_students = 0  # Assignment data not populated yet
 
