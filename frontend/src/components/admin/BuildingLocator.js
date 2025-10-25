@@ -8,6 +8,8 @@ function BuildingLocator() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [buildingTypeFilter, setBuildingTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -101,12 +103,23 @@ const [showAllMode, setShowAllMode] = useState(false);
     setShowEditModal(true);
   };
 
-  const filteredBuildings = buildings.filter((building) =>
-    !searchTerm ||
-    building.building_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    building.building_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (building.campus && building.campus.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredBuildings = buildings.filter((building) => {
+    // Check search term filter
+    const searchMatch = !searchTerm ||
+      building.building_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      building.building_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (building.campus && building.campus.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Check building type filter
+    const typeMatch = !buildingTypeFilter || building.building_type === buildingTypeFilter;
+
+    // Check status filter
+    const statusMatch = !statusFilter ||
+      (statusFilter === "active" && building.is_active) ||
+      (statusFilter === "inactive" && !building.is_active);
+
+    return searchMatch && typeMatch && statusMatch;
+  });
 
   const paginatedBuildings = filteredBuildings.slice(
     (currentPage - 1) * itemsPerPage,
@@ -140,7 +153,7 @@ const [showAllMode, setShowAllMode] = useState(false);
 
   if (loading) {
     return (
-      <AdminLayout title="🗺️ Building Locator">
+      <AdminLayout title="🗺️ Buildings Info">
         <div className="flex items-center justify-center py-8">
           <div className="text-gray-600">Loading building locations...</div>
         </div>
@@ -149,72 +162,146 @@ const [showAllMode, setShowAllMode] = useState(false);
   }
 
   return (
-    <AdminLayout title="🗺️ Building Locator">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <input
-            type="text"
-            placeholder="🔍 Search by code, name, or campus..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[300px]"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            ➕ Add Building
-          </button>
-          <button
-            onClick={toggleShowAll}
-            disabled={loading}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            {showAllMode ? "📋 Show Less" : "📋 Show All"}
-          </button>
-          <button
-            onClick={fetchBuildings}
-            disabled={loading}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            🔄 Refresh
-          </button>
-        </div>
-      </div>
+    <AdminLayout title="🗺️ Buildings Info">
+      {message && <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg"><p className="text-green-800">{message}</p></div>}
+      {error && <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"><p className="text-red-800">{error}</p></div>}
 
-      {message && <p className="text-green-500 mb-4">{message}</p>}
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {/* Controls Bar */}
+      <div className="mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          {/* Search Row */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between gap-4">
+              {/* Search & Filters */}
+              <div className="flex gap-2">
+                {/* Search */}
+                <div className="w-64">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-white transition-colors text-sm"
+                    />
+                  </div>
+                </div>
 
-      {/* Summary Stats */}
-      <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600">{buildings.length}</div>
-              <div className="text-xs text-gray-600 font-medium">Total Buildings</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600">
-                {buildings.filter(b => b.is_active).length}
+                {/* Type Filter */}
+                <div className="w-32">
+                  <div className="relative">
+                    <select
+                      value={buildingTypeFilter}
+                      onChange={(e) => {
+                        setBuildingTypeFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="block w-full pl-8 pr-6 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-white transition-colors text-xs appearance-none"
+                    >
+                      <option value="">All Types</option>
+                      <option value="academic">Academic</option>
+                      <option value="laboratory">Lab</option>
+                      <option value="residence">Residence</option>
+                    </select>
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                      </svg>
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="w-32">
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="block w-full pl-8 pr-6 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-white transition-colors text-xs appearance-none"
+                    >
+                      <option value="">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-gray-600 font-medium">Active Buildings</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600">
-                {buildings.filter(b => b.latitude && b.longitude).length}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchBuildings}
+                  disabled={loading}
+                  className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium ${
+                    loading
+                      ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                      : 'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                  } transition-colors`}
+                >
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </button>
+
+                <button
+                  onClick={toggleShowAll}
+                  disabled={loading}
+                  className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium ${showAllMode ? 'text-orange-700' : 'text-gray-700'} bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors`}
+                >
+                  {showAllMode ? (
+                    <>
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Show All
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+                >
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add
+                </button>
               </div>
-              <div className="text-xs text-gray-600 font-medium">With Coordinates</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600">
-                {buildings.filter(b => b.campus).length}
-              </div>
-              <div className="text-xs text-gray-600 font-medium">With Campus Info</div>
             </div>
           </div>
         </div>
@@ -232,13 +319,16 @@ const [showAllMode, setShowAllMode] = useState(false);
                   Building Code & Name
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Campus & Address
+                  Address
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Coordinates
+                  Map
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Type & Status
+                  Type
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Status
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Actions
@@ -248,7 +338,7 @@ const [showAllMode, setShowAllMode] = useState(false);
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedBuildings.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-4 py-8 text-center">
+                  <td colSpan="6" className="px-4 py-8 text-center">
                     <div className="text-4xl mb-2">🏢</div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {searchTerm ? "No buildings found" : "No buildings registered"}
@@ -289,53 +379,55 @@ const [showAllMode, setShowAllMode] = useState(false);
                     </td>
                     <td className="px-4 py-2">
                       <div className="text-sm text-gray-900">
-                        {building.campus && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
-                            {building.campus}
-                          </span>
-                        )}
                         {building.full_address && (
-                          <div className="text-xs text-gray-600 mt-1 max-w-xs leading-tight">
+                          <div className="text-xs text-gray-600 max-w-xs leading-tight">
                             {building.full_address}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {building.latitude && building.longitude ? (
-                        <div className="text-xs font-mono text-gray-900">
-                          <div>{building.latitude.toFixed(4)}°, {building.longitude.toFixed(4)}°</div>
-                          <button
-                            onClick={() => {
-                              const url = `https://maps.google.com/?q=${building.latitude},${building.longitude}`;
-                              window.open(url, '_blank');
-                            }}
-                            className="text-blue-600 hover:text-blue-800 text-xs underline"
-                          >
-                            📍 Map
-                          </button>
-                        </div>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      {building.full_address ? (
+                        <button
+                          onClick={() => {
+                            const url = `https://maps.google.com/?q=${encodeURIComponent(building.full_address)}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                          title="Open in Google Maps"
+                        >
+                          📍
+                        </button>
+                      ) : building.latitude && building.longitude ? (
+                        <button
+                          onClick={() => {
+                            const url = `https://maps.google.com/?q=${building.latitude},${building.longitude}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                          title="Open in Google Maps"
+                        >
+                          📍
+                        </button>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">No coords</span>
+                        <span className="text-gray-400 text-lg">-</span>
                       )}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="space-y-0.5">
-                        {building.building_type && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {building.building_type}
-                          </span>
-                        )}
-                        <div className="flex items-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            building.is_active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}>
-                            {building.is_active ? "✓" : "✗"}
-                          </span>
-                        </div>
-                      </div>
+                      {building.building_type && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {building.building_type}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        building.is_active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {building.is_active ? "✓" : "✗"}
+                      </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-1">
                       <button
@@ -369,7 +461,7 @@ const [showAllMode, setShowAllMode] = useState(false);
               ← Previous
             </button>
             <span className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages} ({filteredBuildings.length} total buildings)
+              Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}

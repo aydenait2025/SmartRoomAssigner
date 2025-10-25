@@ -1,19 +1,27 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models.exam import Exam
-# Note: RoomAssignment is commented out in assignment.py for now
-# from ..models.assignment import RoomAssignment
-from ..models.room import Room
-from ..models.user import User
 from datetime import datetime, time
 import math
 
 bp = Blueprint('schedules', __name__)
 
+# Try to import models inside functions to avoid circular import issues
+# from ..models.exam import Exam
+# from ..models.user import User
+# from ..models.room import Room
+
+@bp.route('/test-schedules', methods=['GET'])
+def test_schedules():
+    return jsonify({'message': 'schedules blueprint is working!'})
+
 @bp.route('/schedules', methods=['GET'])
 def get_schedules():
     """Get paginated list of schedules/exams"""
     try:
+        # Import models here to avoid circular imports
+        from ..models.exam import Exam
+        from ..models.user import User
+
         # Get query parameters
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
@@ -92,6 +100,8 @@ def get_schedules():
 def create_schedule():
     """Create a new schedule/exam"""
     try:
+        from ..models.exam import Exam
+
         data = request.get_json()
 
         # Create exam
@@ -123,6 +133,8 @@ def create_schedule():
 def update_schedule(schedule_id):
     """Update an existing schedule/exam"""
     try:
+        from ..models.exam import Exam
+
         data = request.get_json()
 
         exam = db.session.query(Exam).get(schedule_id)
@@ -153,6 +165,8 @@ def update_schedule(schedule_id):
 def delete_schedule(schedule_id):
     """Delete a schedule/exam"""
     try:
+        from ..models.exam import Exam
+
         exam = db.session.query(Exam).get(schedule_id)
         if not exam:
             return jsonify({'error': 'Schedule not found'}), 404

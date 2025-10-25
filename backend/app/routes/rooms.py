@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from ..models.building import Building
 from ..models.room import Room
+from ..models.room_reservation import RoomReservation
+from ..models.user import User
 from ..extensions import db
 
 bp = Blueprint('rooms', __name__)
@@ -15,6 +17,7 @@ def get_rooms():
     building_id = request.args.get('building_id', type=int)
     room_type = request.args.get('type', '')
     status_filter = request.args.get('status', 'all')  # 'all', 'active', 'inactive'
+    department_id = request.args.get('department_id', type=int)
 
     rooms_query = Room.query
 
@@ -23,6 +26,17 @@ def get_rooms():
 
     if room_type:
         rooms_query = rooms_query.filter_by(room_type=room_type)
+
+    if department_id:
+        # Find rooms with active reservations for this department
+        # Get all users in this department and their approved reservations
+        department_users_ids = db.session.query(User.id).filter(User.department_id == department_id).subquery()
+        reserved_room_ids = db.session.query(RoomReservation.room_id).filter(
+            RoomReservation.requested_by.in_(department_users_ids),
+            RoomReservation.reservation_status == 'approved'
+        ).distinct().subquery()
+
+        rooms_query = rooms_query.filter(Room.id.in_(reserved_room_ids))
 
     # Apply status filter
     if status_filter == 'active':
@@ -194,3 +208,142 @@ def search_rooms():
 
     rooms = rooms_query.all()
     return jsonify({'rooms': [room.to_dict() for room in rooms]}), 200
+
+# ============= ROOM RESERVATION MANAGEMENT ============
+
+@bp.route('/room-reservations', methods=['GET'])
+@login_required
+def get_room_reservations():
+    """Get room reservations with filtering options"""
+    room_id = request.args.get('room_id', type=int)
+    department_id = request.args.get('department_id', type=int)
+    status = request.args.get('status', 'approved')  # Default to approved only
+
+    reservations_query = RoomReservation.query
+
+    if room_id:
+        reservations_query = reservations_query.filter_by(room_id=room_id)
+
+    if department_id:
+        # Get reservations from users in this department
+        department_users_ids = db.session.query(User.id).filter(User.department_id == department_id).subquery()
+        reservations_query = reservations_query.filter(RoomReservation.requested_by.in_(department_users_ids))
+
+    if status != 'all':
+        reservations_query = reservations_query.filter_by(reservation_status=status)
+
+    # Order by creation date (newest first)
+    reservations_query = reservations_query.order_by(RoomReservation.created_at.desc())
+
+    reservations = reservations_query.all()
+    return jsonify({'reservations': [r.to_dict() for r in reservations]}), 200
+
+@bp.route('/room-reservations', methods=['POST'])
+@login_required
+def create_room_reservation():
+    """Create a new room reservation (for department assignment)"""
+    data = request.get_json()
+
+    required_fields = ['room_id', 'event_title']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'{field} is required'}), 400
+
+    # Set defaults for department reservations
+    if not data.get('event_type'):
+        data['event_type'] = 'department_reservation'
+
+    # Auto-approve department reservations for now
+    if not data.get('reservation_status'):
+        data['reservation_status'] = 'approved'
+
+    if not data.get('approved_at'):
+        data['approved_at'] = db.func.now()
+
+    if not data.get('approved_by'):
+        data['approved_by'] = current_user.id
+
+    # Check for conflicting reservations (simplified - same room, overlapping time)
+    if data.get('reservation_date') and data.get('start_time') and data.get('end_time'):
+        conflicting = RoomReservation.query.filter(
+            RoomReservation.room_id == data['room_id'],
+            RoomReservation.reservation_date == data['reservation_date'],
+            RoomReservation.reservation_status == 'approved',
+            db.or_(
+                db.and_(
+                    RoomReservation.start_time <= data['end_time'],
+                    RoomReservation.end_time >= data['start_time']
+                )
+            )
+        ).first()
+
+        if conflicting:
+            return jsonify({'error': 'Room is already reserved during this time period'}), 409
+
+    reservation = RoomReservation(
+        room_id=data['room_id'],
+        requested_by=current_user.id,
+        event_title=data['event_title'],
+        event_description=data.get('event_description', ''),
+        event_type=data.get('event_type', 'department_reservation'),
+        expected_attendees=data.get('expected_attendees', 1),
+        reservation_date=data.get('reservation_date'),
+        start_time=data.get('start_time'),
+        end_time=data.get('end_time'),
+        reservation_status=data.get('reservation_status', 'approved'),
+        approved_by=data.get('approved_by', current_user.id),
+        approved_at=data.get('approved_at'),
+        approval_notes=data.get('approval_notes', 'Auto-approved department reservation')
+    )
+
+    db.session.add(reservation)
+    db.session.commit()
+
+    return jsonify({'message': 'Room reservation created successfully', 'reservation': reservation.to_dict()}), 201
+
+@bp.route('/room-reservations/<int:reservation_id>', methods=['DELETE'])
+@login_required
+def delete_room_reservation(reservation_id):
+    """Delete a room reservation"""
+    reservation = RoomReservation.query.get_or_404(reservation_id)
+
+    # Only allow users to delete their own reservations (or admins)
+    if reservation.requested_by != current_user.id and current_user.role.name != 'admin':
+        return jsonify({'error': 'Permission denied'}), 403
+
+    db.session.delete(reservation)
+    db.session.commit()
+
+    return jsonify({'message': 'Room reservation deleted successfully'}), 200
+
+# Endpoint for department room management
+@bp.route('/departments/<int:department_id>/assign-room', methods=['POST'])
+@login_required
+def assign_room_to_department(department_id):
+    """Simplified endpoint to assign a room to a department via reservation"""
+    data = request.get_json()
+
+    if not data.get('room_id'):
+        return jsonify({'error': 'room_id is required'}), 400
+
+    # Create a long-term reservation for department use
+    reservation = RoomReservation(
+        room_id=data['room_id'],
+        requested_by=current_user.id,
+        event_title=f'Department Assignment - Room {data.get("room_number", "Unknown")}',
+        event_description=f'Assigned to department for academic use',
+        event_type='department_reservation',
+        expected_attendees=50,  # Default capacity
+        reservation_date=db.func.current_date(),
+        start_time='08:00',  # All day
+        end_time='22:00',
+        reservation_status='approved',
+        approved_by=current_user.id,
+        approved_at=db.func.now(),
+        approval_notes='Department room assignment'
+    )
+
+    db.session.add(reservation)
+    db.session.commit()
+
+    return jsonify({'message': 'Room assigned to department successfully', 'reservation': reservation.to_dict()}), 201

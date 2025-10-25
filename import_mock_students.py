@@ -25,7 +25,7 @@ def import_students_from_csv():
 
         # Read CSV file
         students_data = []
-        csv_path = "utils/scripts/data-generation/mock_students_600.csv"
+        csv_path = "utils/scripts/data-generation/mock_students_905.csv"
 
         try:
             with open(csv_path, 'r', encoding='utf-8') as f:
@@ -39,7 +39,7 @@ def import_students_from_csv():
         print(f"📊 Found {len(students_data)} students in CSV")
 
         # Get student role ID (assuming it exists)
-        cursor.execute("SELECT id FROM roles WHERE name = 'student' LIMIT 1")
+        cursor.execute("SELECT id FROM roles WHERE name = 'Student' LIMIT 1")
         role_result = cursor.fetchone()
         if not role_result:
             print("❌ Student role not found. Please create roles first.")

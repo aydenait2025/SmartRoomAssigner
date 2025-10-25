@@ -41,12 +41,12 @@ def get_courses():
     for course in courses:
         course_dict = course.to_dict()
 
-        # Get assigned students count (from assignments table based on course field)
+        # Get enrolled students count (actual course enrollment)
         try:
             from ..extensions import db
             result = db.session.execute(
-                "SELECT COUNT(*) FROM assignments WHERE course ILIKE :course_name",
-                {'course_name': f'%{course.course_name}%'}
+                "SELECT COUNT(*) FROM course_enrollments WHERE course_id = :course_id",
+                {'course_id': course.id}
             ).scalar()
             assigned_students = result or 0
         except:
@@ -84,11 +84,11 @@ def get_course(course_id):
 
     course_dict = course.to_dict()
 
-    # Get assigned students count
+    # Get enrolled students count (actual course enrollment)
     try:
         result = db.session.execute(
-            "SELECT COUNT(*) FROM assignments WHERE course ILIKE :course_name",
-            {'course_name': f'%{course.course_name}%'}
+            "SELECT COUNT(*) FROM course_enrollments WHERE course_id = :course_id",
+            {'course_id': course.id}
         ).scalar()
         assigned_students = result or 0
     except:
@@ -158,11 +158,11 @@ def update_course(course_id):
 
     course_dict = course.to_dict()
 
-    # Get current assigned students
+    # Get current enrolled students count (actual course enrollment)
     try:
         result = db.session.execute(
-            "SELECT COUNT(*) FROM assignments WHERE course ILIKE :course_name",
-            {'course_name': f'%{course.course_name}%'}
+            "SELECT COUNT(*) FROM course_enrollments WHERE course_id = :course_id",
+            {'course_id': course.id}
         ).scalar()
         assigned_students = result or 0
     except:
@@ -180,6 +180,18 @@ def delete_course(course_id):
     course = Course.query.get(course_id)
     if not course:
         return jsonify({'error': 'Course not found'}), 404
+
+    # Check if course has any enrolled students - prevent deletion if it does
+    enrolled_count = db.session.execute(
+        "SELECT COUNT(*) FROM course_enrollments WHERE course_id = :course_id",
+        {'course_id': course_id}
+    ).scalar()
+
+    if enrolled_count > 0:
+        return jsonify({
+            'error': f'Cannot delete course: {course.course_code} has {enrolled_count} enrolled students. '
+                    'Please unenroll all students before deleting the course.'
+        }), 409  # Conflict status code
 
     db.session.delete(course)
     db.session.commit()

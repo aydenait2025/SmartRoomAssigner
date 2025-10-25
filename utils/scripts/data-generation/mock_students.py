@@ -272,18 +272,20 @@ def main():
     print("🎓 SmartRoomAssigner - Mock Student Data Generator")
     print("=" * 60)
 
-    # Generate student data
-    students = generate_student_data(600)
+    # Generate additional student data to reach 1000 total
+    # Currently have 95 students, need 905 more
+    students = generate_student_data(905)
 
     # Save to CSV
-    save_to_csv(students, "mock_students_600.csv")
+    save_to_csv(students, "mock_students_905.csv")
 
     # Analyze the data
     analyze_generated_data(students)
 
     print("\n🎉 Generation Complete!")
     print("💡 Use this CSV file to test bulk import in the Student Management page")
-    print("📂 File: mock_students_600.csv")
+    print("📂 File: mock_students_905.csv")
+    print("🎯 This will bring total student count to 1000")
 
 if __name__ == "__main__":
     main()

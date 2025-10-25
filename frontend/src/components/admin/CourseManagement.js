@@ -17,6 +17,7 @@ function CourseManagement() {
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'assigned', 'unassigned'
   const [sortBy, setSortBy] = useState("name"); // 'name', 'code', 'students', 'status'
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc', 'desc'
+  const [showAll, setShowAll] = useState(false); // Toggle between paginated and all courses
 
   // Departments state for dropdown
   const [departments, setDepartments] = useState([]);
@@ -121,20 +122,7 @@ function CourseManagement() {
     }
   };
 
-  const handleDeleteCourse = async (courseId) => {
-    if (!window.confirm("Are you sure you want to delete this course?")) return;
 
-    try {
-      setError("");
-      setMessage("");
-
-      await axios.delete(`/courses/${courseId}`, { withCredentials: true });
-      setMessage("Course deleted successfully!");
-      fetchCourses();
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete course");
-    }
-  };
 
   const openEditModal = (course) => {
     setEditingCourse({
@@ -308,7 +296,20 @@ function CourseManagement() {
   return (
     <AdminLayout title="📚 Course Management">
       <div className="flex items-center justify-end mb-6">
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {filteredCourses.length > perPage && (
+            <button
+              onClick={() => {
+                setShowAll(!showAll);
+                if (!showAll) {
+                  setCurrentPage(1); // Reset to first page when switching to paginated view
+                }
+              }}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              {showAll ? "🔽 Show Less (10 per page)" : `🔼 Show All (${filteredCourses.length} courses)`}
+            </button>
+          )}
           <button
             onClick={handleDownloadTemplate}
             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -397,12 +398,14 @@ function CourseManagement() {
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <div className="text-2xl font-bold text-purple-600">
-              {courses.reduce((sum, c) => sum + c.expected_students, 0)}
+              {courses.reduce((sum, c) => sum + c.assigned_students, 0)}
             </div>
-            <div className="text-sm text-gray-600">Total Expected Students</div>
+            <div className="text-sm text-gray-600">Total Enrolled Students</div>
           </div>
         </div>
       </div>
+
+
 
       {/* Search and Filter Controls */}
       <div className="mb-6 p-4 bg-white shadow-lg rounded-xl border border-gray-200">
@@ -444,7 +447,7 @@ function CourseManagement() {
             >
               <option value="name">Course Name</option>
               <option value="code">Course Code</option>
-              <option value="students">Expected Students</option>
+              <option value="students">Enrollment</option>
               <option value="status">Seating Status</option>
             </select>
           </div>
@@ -497,7 +500,7 @@ function CourseManagement() {
                     Department
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Expected Students
+                    Enrollment
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Assigned Students
@@ -511,7 +514,7 @@ function CourseManagement() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedCourses.map((course, index) => {
+                {(showAll ? filteredCourses : paginatedCourses).map((course, index) => {
                   const isFullyAssigned =
                     course.assigned_students >= course.expected_students;
                   const assignmentRate =
@@ -569,21 +572,14 @@ function CourseManagement() {
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-center">
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => openEditModal(course)}
-                          className="px-2 py-1 text-sm"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCourse(course.id)}
-                          className="px-2 py-1 text-sm"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => openEditModal(course)}
+                        className="px-2 py-1 text-sm"
+                      >
+                        ✏️
+                      </button>
                     </td>
+
                     </tr>
                   );
                 })}
@@ -594,7 +590,7 @@ function CourseManagement() {
       </div>
 
       {/* Pagination */}
-      {filteredTotalPages > 1 && (
+      {filteredTotalPages > 1 && !showAll && (
         <div className="mt-6 flex justify-center items-center space-x-4">
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -671,7 +667,7 @@ function CourseManagement() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Students
+                  Enrollment
                 </label>
                 <input
                   type="number"
@@ -767,7 +763,7 @@ function CourseManagement() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Students
+                  Enrollment
                 </label>
                 <input
                   type="number"

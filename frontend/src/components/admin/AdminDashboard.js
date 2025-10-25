@@ -166,9 +166,6 @@ function AdminDashboard() {
               <p className="text-2xl font-light text-gray-900">
                 {loading ? "..." : stats.total_rooms}
               </p>
-              <span className="text-xs text-green-600 font-medium">
-                {loading ? "" : `${stats.available_rooms} available`}
-              </span>
             </div>
             <div className="text-green-500 text-2xl">🚪</div>
           </div>
@@ -182,13 +179,10 @@ function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Exams</p>
+              <p className="text-sm font-medium text-gray-600">Active Courses</p>
               <p className="text-2xl font-light text-gray-900">
                 {loading ? "..." : stats.active_exams}
               </p>
-              <span className="text-xs text-yellow-600 font-medium">
-                Live count
-              </span>
             </div>
             <div className="text-blue-500 text-2xl">📚</div>
           </div>
@@ -208,9 +202,6 @@ function AdminDashboard() {
               <p className="text-2xl font-light text-gray-900">
                 {loading ? "..." : stats.total_students.toLocaleString()}
               </p>
-              <span className="text-xs text-purple-600 font-medium">
-                {loading ? "" : `${stats.unassigned_students} unassigned`}
-              </span>
             </div>
             <div className="text-purple-500 text-2xl">👥</div>
           </div>

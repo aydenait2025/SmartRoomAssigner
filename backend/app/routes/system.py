@@ -13,6 +13,7 @@ from datetime import datetime
 bp = Blueprint('system', __name__)
 
 @bp.route('/dashboard/stats', methods=['GET'])
+@login_required
 def get_dashboard_stats():
     """Get dashboard statistics for admin display"""
     try:

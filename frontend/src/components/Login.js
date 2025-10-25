@@ -49,9 +49,9 @@ function Login() {
         localStorage.setItem("token", response.data.token || "logged-in");
         localStorage.setItem("userRole", response.data.user.role);
 
-        if (response.data.user.role === "admin") {
+        if (response.data.user.role === "Administrator") {
           navigate("/admin/dashboard");
-        } else {
+        } else if (response.data.user.role === "student") {
           navigate("/student/dashboard");
         }
       } else {

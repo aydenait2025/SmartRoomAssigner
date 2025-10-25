@@ -14,6 +14,12 @@ function RoomManagement() {
   const [totalActive, setTotalActive] = useState(0);
   const perPage = 10;
 
+  // New: Department-focused view
+  const [currentView, setCurrentView] = useState("departmental"); // 'departmental', 'all'
+  const [departmentalRooms, setDepartmentalRooms] = useState([]);
+  const [allRooms, setAllRooms] = useState([]);
+  const [departmentId, setDepartmentId] = useState(null);
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive'
@@ -25,6 +31,8 @@ function RoomManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
+  const [showAssignConfirm, setShowAssignConfirm] = useState(false);
+  const [roomToAssign, setRoomToAssign] = useState(null);
   const [newRoom, setNewRoom] = useState({
     building_id: "",
     room_number: "",
@@ -41,48 +49,119 @@ function RoomManagement() {
   // File input refs
   const csvImportRef = React.useRef(null);
 
-  // Fetch buildings on component mount
+  // Fetch buildings only (user/department ID is fetched separately)
   const fetchData = async () => {
     try {
-      const buildingsResponse = await axios.get(`/buildings?per_page=1000`, { withCredentials: true });
+      const [buildingsResponse, userResponse] = await Promise.all([
+        axios.get(`/buildings?per_page=1000`, { withCredentials: true }),
+        axios.get('/auth/user', { withCredentials: true })
+      ]);
+
       setBuildings(buildingsResponse.data.buildings || []);
+
+      // Set department ID from user data
+      if (userResponse.data.user?.department_id) {
+        setDepartmentId(userResponse.data.user.department_id);
+      }
     } catch (err) {
-      console.error("Failed to load buildings:", err);
+      console.error("Failed to load initial data:", err);
+      setBuildings([]);
+      setDepartmentId(null);
     }
   };
 
+  // Initialize component
   useEffect(() => {
-    fetchData();
+    fetchInitialData();
   }, []);
 
-  useEffect(() => {
-    fetchRooms(currentPage);
-  }, [statusFilter]); // Re-fetch when status filter changes
-
-  const fetchRooms = async (page = 1) => {
+  // Combined initial data fetch
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        page: page,
-        per_page: perPage,
-        status: statusFilter,  // Pass the current status filter to backend
-      });
 
-      const response = await axios.get(
-        `/rooms?${params.toString()}`,
-        { withCredentials: true },
-      );
-      setRooms(response.data.rooms);
-      setCurrentPage(response.data.current_page);
-      setTotalPages(response.data.total_pages);
-      setTotalItems(response.data.total_items);
-      setTotalActive(response.data.total_active);
+      // Fetch buildings and user data first
+      const [buildingsResponse, userResponse] = await Promise.all([
+        axios.get(`/buildings?per_page=1000`, { withCredentials: true }),
+        axios.get('/auth/user', { withCredentials: true })
+      ]);
+
+      setBuildings(buildingsResponse.data.buildings || []);
+
+      // Set department ID from user data
+      const newDepartmentId = userResponse.data.user?.department_id || null;
+      setDepartmentId(newDepartmentId);
+
+      // Now fetch rooms with the department ID
+      await fetchRoomsData(newDepartmentId);
+
     } catch (err) {
-      setError(err.response?.data?.error || "");
+      console.error("Failed to load initial data:", err);
+      setBuildings([]);
+      setDepartmentId(null);
+      setAllRooms([]);
+      setDepartmentalRooms([]);
+      setRooms([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchRoomsData = async (deptId = departmentId) => {
+    try {
+      // Fetch all rooms without pagination
+      const allResponse = await axios.get(`/rooms?per_page=10000`, { withCredentials: true });
+      const allRoomsData = allResponse.data.rooms || [];
+      setAllRooms(allRoomsData);
+
+      // Fetch departmental rooms if we have department ID
+      let departmentalData = [];
+      if (deptId) {
+        try {
+          const departmentalResponse = await axios.get(`/rooms?department_id=${deptId}&per_page=10000`, { withCredentials: true });
+          departmentalData = departmentalResponse.data.rooms || [];
+        } catch (deptErr) {
+          console.warn("Failed to fetch departmental rooms:", deptErr);
+          departmentalData = [];
+        }
+      }
+      setDepartmentalRooms(departmentalData);
+
+      // Set current rooms based on view
+      if (currentView === 'departmental') {
+        setRooms(departmentalData);
+        setTotalItems(departmentalData.length);
+      } else {
+        setRooms(allRoomsData);
+        setTotalItems(allRoomsData.length);
+      }
+
+      // Calculate active rooms
+      const activeCount = allRoomsData.filter(room => room.is_active && room.is_bookable).length;
+      setTotalActive(activeCount);
+
+    } catch (err) {
+      console.error("Failed to fetch room data:", err);
+      setAllRooms([]);
+      setDepartmentalRooms([]);
+      setRooms([]);
+      setTotalItems(0);
+      setTotalActive(0);
+    }
+  };
+
+  // Update rooms when view changes
+  useEffect(() => {
+    if (allRooms.length > 0) {
+      if (currentView === 'departmental') {
+        setRooms(departmentalRooms);
+        setTotalItems(departmentalRooms.length);
+      } else {
+        setRooms(allRooms);
+        setTotalItems(allRooms.length);
+      }
+    }
+  }, [currentView, departmentalRooms, allRooms]);
 
   const handleAddRoom = async () => {
     try {
@@ -225,6 +304,35 @@ function RoomManagement() {
     setShowEditModal(true);
   };
 
+  const handleAssignToDepartment = (room) => {
+    setRoomToAssign(room);
+    setShowAssignConfirm(true);
+  };
+
+  const confirmAssignToDepartment = async () => {
+    if (!roomToAssign || !departmentId) {
+      setError("Room or department information not available");
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+
+      await axios.post(`/rooms/departments/${departmentId}/assign-room`, {
+        room_id: roomToAssign.id,
+        room_number: roomToAssign.room_number
+      }, { withCredentials: true });
+
+      setMessage(`Room ${roomToAssign.room_number} assigned to Computer Science department`);
+      setShowAssignConfirm(false);
+      setRoomToAssign(null);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to assign room to department");
+    }
+  };
+
   // Get unique buildings for filter dropdown
   const getUniqueBuildings = () => {
     const unique = [...new Set(rooms.map((room) => room.building_name))].filter(name => name);
@@ -314,6 +422,43 @@ function RoomManagement() {
 
   return (
     <AdminLayout title="🚪 Room Management">
+      {/* Tabbed Interface */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setCurrentView("departmental")}
+              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                currentView === "departmental"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              🏢 My Departmental Rooms ({departmentalRooms.length})
+            </button>
+            <button
+              onClick={() => setCurrentView("all")}
+              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                currentView === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              🏫 All University Rooms ({allRooms.length})
+            </button>
+          </nav>
+        </div>
+
+        {/* View Description */}
+        <div className="mt-2 text-sm text-gray-600">
+          {currentView === "departmental" ? (
+            <p>🔔 Focus on your assigned departmental rooms. Use this view for course and student assignments.</p>
+          ) : (
+            <p>📋 Browse all university rooms. Switch to departmental view to focus on your assigned rooms.</p>
+          )}
+        </div>
+      </div>
+
       <div className="flex items-center justify-end mb-6">
         <div className="flex space-x-3">
           <button
@@ -497,6 +642,11 @@ function RoomManagement() {
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
+                  {currentView === 'all' && (
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Department
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -551,6 +701,16 @@ function RoomManagement() {
                         </button>
                       </div>
                     </td>
+                    {currentView === 'all' && (
+                      <td className="px-4 py-2 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleAssignToDepartment(room)}
+                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                        >
+                          🎯 Assign
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -559,22 +719,22 @@ function RoomManagement() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Pagination - Simple pagination for current view */}
+      {Math.ceil(filteredRooms.length / perPage) > 1 && (
         <div className="mt-6 flex justify-center items-center space-x-4">
           <button
-            onClick={() => fetchRooms(Math.max(1, currentPage - 1))}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
           >
             ← Previous
           </button>
           <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages} ({totalItems} total rooms)
+            Page {currentPage} of {Math.ceil(filteredRooms.length / perPage)} ({filteredRooms.length} filtered rooms)
           </span>
           <button
-            onClick={() => fetchRooms(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(Math.min(Math.ceil(filteredRooms.length / perPage), currentPage + 1))}
+            disabled={currentPage === Math.ceil(filteredRooms.length / perPage)}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
           >
             Next →
@@ -927,6 +1087,38 @@ function RoomManagement() {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
                 💾 Update Room
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Department Assignment Confirmation Modal */}
+      {showAssignConfirm && roomToAssign && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4 text-gray-900">🎯 Confirm Room Assignment</h3>
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to assign room <strong>{roomToAssign.room_number}</strong> in <strong>{roomToAssign.building_name}</strong> to the Computer Science department?
+            </p>
+            <p className="text-sm text-gray-600 mb-6">
+              This will create a reservation for the department to use this room for academic purposes.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowAssignConfirm(false);
+                  setRoomToAssign(null);
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAssignToDepartment}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                🎯 Assign Room
               </button>
             </div>
           </div>

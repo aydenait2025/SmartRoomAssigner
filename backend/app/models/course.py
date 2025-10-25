@@ -26,7 +26,7 @@ class Course(db.Model):
 
     # Relationships
     department = db.relationship('AcademicDepartment', back_populates='courses', lazy=True)
-    enrollments = db.relationship('Enrollment', back_populates='course', lazy=True)
+    # enrollments = db.relationship('Enrollment', back_populates='course', lazy=True)  # Enrollment model doesn't exist
 
     def to_dict(self):
         """Convert course to dictionary for JSON serialization"""

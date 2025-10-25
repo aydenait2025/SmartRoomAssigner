@@ -1,0 +1,31 @@
+-- Create mock exams for existing courses with dates
+-- Insert 27 exams for courses (using specific dates for demo)
+
+INSERT INTO exams (course_name, course_code, exam_date, start_time, end_time, created_by) VALUES
+('Introduction to Computer Science', 'CSC108', '2025-10-30', '09:00:00', '11:00:00', 1),
+('Computer Programming', 'CSC148', '2025-11-15', '10:30:00', '12:30:00', 1),
+('Data Structures and Algorithms', 'CSC165', '2025-11-25', '14:00:00', '16:00:00', 1),
+('Mathematical Expression and Reasoning', 'CSC236', '2025-12-05', '15:30:00', '17:30:00', 1),
+('Computer Organization', 'CSC258', '2025-12-15', '09:00:00', '11:00:00', 1),
+('Principles of Programming Languages', 'CSC324', '2025-12-25', '10:30:00', '12:30:00', 1),
+('Introduction to Artificial Intelligence', 'CSC384', '2026-01-05', '14:00:00', '16:00:00', 1),
+('Software Engineering', 'CSC302', '2026-01-15', '15:30:00', '17:30:00', 1),
+('Operating Systems', 'CSC409', '2026-01-25', '09:00:00', '11:00:00', 1),
+('Computer Networks', 'CSC458', '2026-02-05', '10:30:00', '12:30:00', 1),
+('Database Systems', 'CSC343', '2026-02-15', '14:00:00', '16:00:00', 1),
+('Web Technologies', 'CSC309', '2026-02-25', '15:30:00', '17:30:00', 1),
+('Machine Learning', 'CSC311', '2026-03-05', '09:00:00', '11:00:00', 1),
+('Computer Graphics', 'CSC317', '2026-03-15', '10:30:00', '12:30:00', 1),
+('Cryptography', 'CSC440', '2026-03-25', '14:00:00', '16:00:00', 1),
+('Parallel Programming', 'CSC367', '2026-04-05', '15:30:00', '17:30:00', 1),
+('Computer Vision', 'CSC420', '2026-04-15', '09:00:00', '11:00:00', 1),
+('Distributed Systems', 'CSC443', '2026-04-25', '10:30:00', '12:30:00', 1),
+('Knowledge Representation', 'CSC486', '2026-05-05', '14:00:00', '16:00:00', 1),
+('Natural Language Processing', 'CSC428', '2026-05-15', '15:30:00', '17:30:00', 1),
+('Robotics', 'CSC363', '2026-05-25', '09:00:00', '11:00:00', 1),
+('Computer Security', 'CSC349', '2026-06-05', '10:30:00', '12:30:00', 1),
+('Advanced Data Structures', 'CSC263', '2026-06-15', '14:00:00', '16:00:00', 1),
+('Theory of Computation', 'CSC373', '2026-06-25', '15:30:00', '17:30:00', 1),
+('Human-Computer Interaction', 'CSC318', '2026-07-05', '09:00:00', '11:00:00', 1),
+('Software Design', 'CSC207', '2026-07-15', '10:30:00', '12:30:00', 1),
+('Systems Programming', 'CSC209', '2026-07-25', '14:00:00', '16:00:00', 1);
