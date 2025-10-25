@@ -1,17 +1,15 @@
-Flask==3.0.3
+Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 psycopg2-binary==2.9.7
 numpy>=1.24.3  # Allow newer compatible versions
 pandas>=2.0.3  # Allow newer compatible versions
 python-dotenv==1.0.0
 Flask-CORS==4.0.0
-Werkzeug==3.0.3
+Werkzeug==2.3.7
 Flask-Login==0.6.2
 # reportlab==4.0.7
 Flask-Mail==0.9.1
 Authlib==1.2.1
-# psycopg2-binary==2.9.7  # PostgreSQL database driver
-
 # Data processing and scraping
 requests==2.31.0
 selenium==4.15.2

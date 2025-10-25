@@ -11,8 +11,20 @@ class Student(db.Model):
     department = db.Column(db.String(100))
     courses = db.Column(db.Text)
 
-    enrollments = db.relationship('Enrollment', backref='student', lazy=True)
-    room_assignments = db.relationship('RoomAssignment', backref='student', lazy=True)
+    enrollments = db.relationship('Enrollment', back_populates='student', lazy=True)
+    assignments = db.relationship('Assignment', back_populates='student', lazy=True)
+
+    def to_dict(self):
+        """Convert student to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'student_number': self.student_number,
+            'student_id': self.student_id,
+            'department': self.department,
+            'courses': self.courses
+        }
 
     def __repr__(self):
         return f"<Student {self.student_number}>"

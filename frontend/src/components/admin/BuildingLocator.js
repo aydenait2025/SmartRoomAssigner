@@ -1,619 +1,659 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
 import AdminLayout from "./AdminLayout";
-
-// Fix for default marker icon issue with Webpack
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
-  iconUrl: require("leaflet/dist/images/marker-icon.png"),
-  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
-});
 
 function BuildingLocator() {
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [sortBy, setSortBy] = useState("building_name");
-  const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBuilding, setEditingBuilding] = useState(null);
   const itemsPerPage = 10;
 
-  const mapRef = useRef(null);
-  const leafletMapRef = useRef(null); // Use a ref for the Leaflet map instance
-  const markersRef = useRef([]); // To keep track of Leaflet markers
-
-  // University of Toronto coordinates (approximate center)
-  const UOFT_CENTER = [43.6629, -79.3957]; // Leaflet uses [lat, lng]
-  const DEFAULT_ZOOM = 15;
+  const [newBuilding, setNewBuilding] = useState({
+    building_code: "",
+    building_name: "",
+    campus: "",
+    full_address: "",
+    latitude: "",
+    longitude: "",
+    building_type: "",
+  });
 
   useEffect(() => {
     fetchBuildings();
-
-    // Wait for DOM to be ready before initializing map
-    const timer = setTimeout(() => {
-      if (mapRef.current) {
-        initializeMap();
-      }
-    }, 200);
-
-    // Cleanup function for Leaflet map and timer
-    return () => {
-      clearTimeout(timer);
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchBuildings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/buildings", { withCredentials: true });
+      setError("");
+      // Fetch all buildings without pagination limit
+      const response = await axios.get("/buildings?per_page=1000", { withCredentials: true });
       setBuildings(response.data.buildings || []);
     } catch (err) {
-      setError(err.response?.data?.error || "");
+      setError(err.response?.data?.error || "Failed to load buildings");
     } finally {
       setLoading(false);
     }
   };
 
-  const initializeMap = () => {
-    if (leafletMapRef.current) {
-      leafletMapRef.current.remove(); // Remove existing map if re-initializing
-    }
-
-    // Initialize Leaflet map
-    leafletMapRef.current = L.map(mapRef.current).setView(
-      UOFT_CENTER,
-      DEFAULT_ZOOM,
-    );
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(leafletMapRef.current);
-
-    // Add UofT campus boundary
-    addUofTCampusBoundary();
-  };
-
-  const addUofTCampusBoundary = () => {
-    if (!leafletMapRef.current) return;
-
-    // Approximate UofT St. George campus boundary
-    const campusBoundary = [
-      [43.67, -79.41],
-      [43.67, -79.38],
-      [43.65, -79.38],
-      [43.65, -79.41],
-    ];
-
-    L.polyline(campusBoundary, {
-      color: "red",
-      weight: 2,
-      opacity: 1.0,
-      dashArray: "5, 5", // Optional: dashed line
-    }).addTo(leafletMapRef.current);
-
-    // Add campus label marker
-    const uoftIcon = L.divIcon({
-      className: "custom-div-icon",
-      html: `
-        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="18" fill="#4285F4" stroke="#ffffff" stroke-width="2"/>
-          <text x="20" y="25" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">UofT</text>
-        </svg>
-      `,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-    });
-
-    L.marker(UOFT_CENTER, {
-      icon: uoftIcon,
-      title: "University of Toronto - St. George Campus",
-    }).addTo(leafletMapRef.current);
-  };
-
-  // Enhanced search and filter logic
-  const filteredAndSortedBuildings = () => {
-    let filtered = buildings.filter((building) => {
-      const code = building.building_name.split(" - ")[0];
-      const name = building.building_name.split(" - ")[1] || "";
-
-      // Search filter
-      const matchesSearch = !searchTerm ||
-        code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        name.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Type filter
-      const matchesFilter = !filterType || building.type === filterType;
-
-      return matchesSearch && matchesFilter;
-    });
-
-    // Sort buildings
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "building_name":
-          aValue = a.building_name.toLowerCase();
-          bValue = b.building_name.toLowerCase();
-          break;
-        case "total_rooms":
-          aValue = a.total_rooms;
-          bValue = b.total_rooms;
-          break;
-        case "total_capacity":
-          aValue = a.total_capacity;
-          bValue = b.total_capacity;
-          break;
-        case "available_rooms":
-          aValue = a.available_rooms;
-          bValue = b.available_rooms;
-          break;
-        default:
-          aValue = a.building_name.toLowerCase();
-          bValue = b.building_name.toLowerCase();
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  };
-
-  const paginatedBuildings = () => {
-    const filtered = filteredAndSortedBuildings();
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filtered.slice(startIndex, startIndex + itemsPerPage);
-  };
-
-  const totalPages = () => {
-    return Math.ceil(filteredAndSortedBuildings().length / itemsPerPage);
-  };
-
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("asc");
+  const handleCreateBuilding = async () => {
+    try {
+      setError("");
+      setMessage("");
+      await axios.post("/buildings", newBuilding, { withCredentials: true });
+      setMessage("Building created successfully!");
+      setShowCreateModal(false);
+      setNewBuilding({
+        building_code: "",
+        building_name: "",
+        campus: "",
+        full_address: "",
+        latitude: "",
+        longitude: "",
+        building_type: "",
+      });
+      fetchBuildings();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to create building");
     }
   };
 
-  const handleBuildingSelect = (building) => {
-    setSelectedBuilding(building);
-    showBuildingOnMap(building);
-    setCurrentPage(1); // Reset to first page when selecting a building
-  };
-
-  const searchBuildings = (term) => {
-    setSearchTerm(term);
-    setCurrentPage(1); // Reset pagination when searching
-    if (!term.trim()) {
-      setSelectedBuilding(null);
-      clearBuildingMarkers();
-      leafletMapRef.current?.setView(UOFT_CENTER, DEFAULT_ZOOM);
+  const handleEditBuilding = async () => {
+    try {
+      setError("");
+      setMessage("");
+      await axios.put(`/buildings/${editingBuilding.id}`, editingBuilding, { withCredentials: true });
+      setMessage("Building updated successfully!");
+      setShowEditModal(false);
+      setEditingBuilding(null);
+      fetchBuildings();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to update building");
     }
   };
 
-  const clearBuildingMarkers = () => {
-    markersRef.current.forEach((marker) => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.removeLayer(marker);
-      }
-    });
-    markersRef.current = [];
+  const handleDeleteBuilding = async (buildingId, displayName) => {
+    if (!window.confirm(`Are you sure you want to delete "${displayName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      await axios.delete(`/buildings/${buildingId}`, { withCredentials: true });
+      setMessage("Building deleted successfully!");
+      fetchBuildings();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to delete building");
+    }
   };
 
-  const showBuildingOnMap = (building) => {
-    if (!leafletMapRef.current) return;
-
-    clearBuildingMarkers(); // Clear existing markers
-
-    const buildingCoords = getBuildingCoordinates(building);
-
-    const buildingIcon = L.divIcon({
-      className: "custom-div-icon",
-      html: `
-        <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="15" cy="15" r="12" fill="#FF6B35" stroke="#ffffff" stroke-width="2"/>
-          <text x="15" y="19" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">
-            ${building.building_name.split(" - ")[0]}
-          </text>
-        </svg>
-      `,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
-    });
-
-    const marker = L.marker(buildingCoords, {
-      icon: buildingIcon,
-      title: building.building_name,
-    }).addTo(leafletMapRef.current);
-    markersRef.current.push(marker);
-
-    leafletMapRef.current.setView(buildingCoords, 17); // Center map on building
-
-    const infoWindowContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 250px;">
-        <h3 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">
-          ${building.building_name}
-        </h3>
-        <p style="margin: 4px 0; color: #666; font-size: 14px;">
-          <strong>Total Rooms:</strong> ${building.total_rooms}
-        </p>
-        <p style="margin: 4px 0; color: #666; font-size: 14px;">
-          <strong>Available Rooms:</strong> ${building.available_rooms}
-        </p>
-        <p style="margin: 4px 0; color: #666; font-size: 14px;">
-          <strong>Total Capacity:</strong> ${building.total_capacity}
-        </p>
-        <p style="margin: 4px 0; color: #666; font-size: 14px;">
-          <strong>Testing Capacity:</strong> ${building.total_testing_capacity}
-        </p>
-      </div>
-    `;
-
-    marker.bindPopup(infoWindowContent).openPopup();
+  const openEditModal = (building) => {
+    setEditingBuilding({ ...building });
+    setShowEditModal(true);
   };
 
-  const getBuildingCoordinates = (building) => {
-    const buildingCoordinates = {
-      AB: [43.6595, -79.3972], // Astronomy & Astrophysics
-      BA: [43.6598, -79.396], // Bahen Centre
-      BN: [43.665, -79.407], // Bloor - Dufferin area
-      BW: [43.661, -79.395], // Wallberg Building
-      CR: [43.6605, -79.3965], // Croft Chapter House
-      EA: [43.66, -79.394], // Earth Sciences Centre
-      GB: [43.6615, -79.3955], // Galbraith Building
-      HI: [43.658, -79.398], // Haultain Building
-      KP: [43.662, -79.3945], // Northrop Frye Hall
-      LM: [43.663, -79.393], // Lash Miller Chemical Laboratories
-      MP: [43.659, -79.399], // McLennan Physical Laboratories
-      MS: [43.6625, -79.395], // Medical Sciences Building
-      NF: [43.6618, -79.3948], // Northrop Frye Hall
-      OI: [43.6585, -79.3975], // Ontario Institute for Studies in Education
-      PG: [43.6608, -79.3958], // Sidney Smith Hall
-      RW: [43.6592, -79.3968], // Rosebrugh Building
-      SS: [43.6608, -79.3958], // Sidney Smith Hall
-      UC: [43.6628, -79.3955], // University College
-      WE: [43.6612, -79.3952], // Wetmore Hall
-    };
+  const filteredBuildings = buildings.filter((building) =>
+    !searchTerm ||
+    building.building_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    building.building_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (building.campus && building.campus.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-    const code = building.building_name.split(" - ")[0];
-    return buildingCoordinates[code] || UOFT_CENTER;
-  };
+  const paginatedBuildings = filteredBuildings.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const filteredBuildings = buildings.filter((building) => {
-    if (!searchTerm) return true;
-    const code = building.building_name.split(" - ")[0];
-    const name = building.building_name.split(" - ")[1] || "";
-    return (
-      code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const totalPages = Math.ceil(filteredBuildings.length / itemsPerPage);
+
+  // Reset currentPage if it exceeds totalPages (happens after search/filter changes)
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    } else if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-gray-600">Loading building locator...</div>
-      </div>
+      <AdminLayout title="🗺️ Building Locator">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-600">Loading building locations...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
-  const SortIcon = ({ column }) => {
-    if (sortBy !== column) return null;
-    return (
-      <span className="ml-1">
-        {sortOrder === "asc" ? "↑" : "↓"}
-      </span>
-    );
-  };
-
   return (
     <AdminLayout title="🗺️ Building Locator">
-      {/* Header Controls */}
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div className="flex items-center gap-4">
           <input
             type="text"
-            placeholder="🔍 Search by name or code..."
+            placeholder="🔍 Search by code, name, or campus..."
             value={searchTerm}
-            onChange={(e) => searchBuildings(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[250px]"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[300px]"
           />
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Types</option>
-            <option value="Lecture">Lecture</option>
-            <option value="Lab">Lab</option>
-            <option value="Office">Office</option>
-          </select>
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            ➕ Add Building
+          </button>
+          <button
             onClick={fetchBuildings}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+            disabled={loading}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             🔄 Refresh
           </button>
         </div>
       </div>
 
+      {message && <p className="text-green-500 mb-4">{message}</p>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Buildings Table */}
-        <div className="bg-white shadow-lg rounded-xl border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h4 className="text-lg font-semibold">
-                🏢 Buildings
-                <span className="text-sm font-normal text-gray-600 ml-2">
-                  ({filteredAndSortedBuildings().length} found)
-                </span>
-              </h4>
-              <div className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages()}
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Building
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort("total_rooms")}
-                  >
-                    Rooms <SortIcon column="total_rooms" />
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort("available_rooms")}
-                  >
-                    Available <SortIcon column="available_rooms" />
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort("total_capacity")}
-                  >
-                    Capacity <SortIcon column="total_capacity" />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedBuildings().map((building, index) => {
-                  const code = building.building_name.split(" - ")[0];
-                  const name = building.building_name.split(" - ")[1] || "";
-                  const isSelected = selectedBuilding && selectedBuilding.id === building.id;
-
-                  return (
-                    <tr
-                      key={building.id || index}
-                      onClick={() => handleBuildingSelect(building)}
-                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                        isSelected ? "bg-blue-100 border-l-4 border-blue-500" : ""
-                      }`}
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                                {code}
-                              </span>
-                              {name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {building.total_rooms}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          building.available_rooms > 0
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                          {building.available_rooms}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {building.total_capacity?.toLocaleString() || "N/A"}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBuildingSelect(building);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          🗺️ Map
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, filteredAndSortedBuildings().length)} of{" "}
-              {filteredAndSortedBuildings().length} buildings
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages(), currentPage + 1))}
-                disabled={currentPage === totalPages()}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Summary */}
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {buildings.length}
-                </div>
-                <div className="text-xs text-gray-600">Total Buildings</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {buildings.reduce((sum, b) => sum + (b.total_rooms || 0), 0)}
-                </div>
-                <div className="text-xs text-gray-600">Total Rooms</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">
-                  {buildings.reduce((sum, b) => sum + (b.available_rooms || 0), 0)}
-                </div>
-                <div className="text-xs text-gray-600">Available Rooms</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">
-                  {buildings.reduce((sum, b) => sum + (b.total_capacity || 0), 0).toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-600">Total Capacity</div>
-              </div>
+      {/* Buildings Table */}
+      <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h4 className="text-lg font-semibold">
+              🏢 Building Locations
+              <span className="text-sm font-normal text-gray-600 ml-2">
+                ({filteredBuildings.length} found • Focus: Location & Navigation)
+              </span>
+            </h4>
+            <div className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBuildings.length)} of {filteredBuildings.length} buildings
             </div>
           </div>
         </div>
 
-        {/* Map Panel */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <h4 className="text-lg font-semibold">
-              🗺️ Campus Map
-              {selectedBuilding && (
-                <span className="text-sm font-normal text-gray-600 ml-2">
-                  - {selectedBuilding.building_name}
-                </span>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Building Code & Name
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Campus & Address
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Coordinates
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Type & Status
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedBuildings.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-8 text-center">
+                    <div className="text-4xl mb-2">🏢</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {searchTerm ? "No buildings found" : "No buildings registered"}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {searchTerm
+                        ? "Try adjusting your search terms."
+                        : "Add a building to start tracking locations."
+                      }
+                    </p>
+                    {!searchTerm && (
+                      <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 mt-2"
+                      >
+                        ➕ Add First Building
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                paginatedBuildings.map((building, index) => (
+                  <tr
+                    key={building.id}
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}
+                  >
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div>
+                          <div className="text-xs font-medium text-gray-900 bg-blue-100 px-2 py-1 rounded-full font-mono mb-1">
+                            {building.building_code}
+                          </div>
+                          <div className="text-sm text-gray-900 font-medium">
+                            {building.building_name}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="text-sm text-gray-900">
+                        {building.campus && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
+                            {building.campus}
+                          </span>
+                        )}
+                        {building.full_address && (
+                          <div className="text-xs text-gray-600 mt-1 max-w-xs leading-tight">
+                            {building.full_address}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {building.latitude && building.longitude ? (
+                        <div className="text-xs font-mono text-gray-900">
+                          <div>{building.latitude.toFixed(4)}°, {building.longitude.toFixed(4)}°</div>
+                          <button
+                            onClick={() => {
+                              const url = `https://maps.google.com/?q=${building.latitude},${building.longitude}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-xs underline"
+                          >
+                            📍 Map
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">No coords</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <div className="space-y-0.5">
+                        {building.building_type && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {building.building_type}
+                          </span>
+                        )}
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            building.is_active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {building.is_active ? "✓" : "✗"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-1">
+                      <button
+                        onClick={() => openEditModal(building)}
+                        className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBuilding(building.id, building.display_name)}
+                        className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
-            </h4>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            >
+              ← Previous
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages} ({filteredBuildings.length} total buildings)
+            </span>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            >
+              Next →
+            </button>
           </div>
-          <div
-            ref={mapRef}
-            className="w-full h-96 xl:h-[600px]"
-            style={{ minHeight: "500px" }}
-          >
-            {/* Leaflet map will render here */}
-          </div>
-          <div className="p-4 bg-gray-50 text-xs text-gray-600">
-            <p className="mb-2">
-              <strong>Instructions:</strong> Click on any building in the table to see its location on the map.
-              Building markers show the building code and provide detailed information when clicked.
-            </p>
-            <p>
-              <strong>Legend:</strong> 🔵 Campus boundary | 🏛️ Buildings | 📍 Selected building
-            </p>
+        )}
+
+        {/* Summary Stats */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{buildings.length}</div>
+              <div className="text-xs text-gray-600">Total Buildings</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">
+                {buildings.filter(b => b.is_active).length}
+              </div>
+              <div className="text-xs text-gray-600">Active Buildings</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-purple-600">
+                {buildings.filter(b => b.latitude && b.longitude).length}
+              </div>
+              <div className="text-xs text-gray-600">With Coordinates</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-orange-600">
+                {buildings.filter(b => b.campus).length}
+              </div>
+              <div className="text-xs text-gray-600">With Campus Info</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Building Details Modal */}
-      {selectedBuilding && (
+      {/* Create Building Modal */}
+      {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">
-                  {selectedBuilding.building_name}
-                </h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Add New Building</h3>
                 <button
-                  onClick={() => setSelectedBuilding(null)}
+                  onClick={() => setShowCreateModal(false)}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {selectedBuilding.total_rooms}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Rooms</div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Code *
+                    </label>
+                    <input
+                      type="text"
+                      value={newBuilding.building_code}
+                      onChange={(e) => setNewBuilding({...newBuilding, building_code: e.target.value.toUpperCase()})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., BA, BAH, ENG"
+                      required
+                    />
                   </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {selectedBuilding.available_rooms}
-                    </div>
-                    <div className="text-sm text-gray-600">Available Rooms</div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newBuilding.building_name}
+                      onChange={(e) => setNewBuilding({...newBuilding, building_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Bahen Centre"
+                      required
+                    />
                   </div>
                 </div>
 
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {selectedBuilding.total_capacity?.toLocaleString() || "N/A"}
-                  </div>
-                  <div className="text-sm text-gray-600">Total Capacity</div>
-                </div>
-
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {selectedBuilding.total_testing_capacity?.toLocaleString() || "N/A"}
-                  </div>
-                  <div className="text-sm text-gray-600">Testing Capacity</div>
-                </div>
-
-                <div className="pt-3 border-t border-gray-200 space-y-2">
-                  <button
-                    onClick={() => showBuildingOnMap(selectedBuilding)}
-                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Campus
+                  </label>
+                  <select
+                    value={newBuilding.campus}
+                    onChange={(e) => setNewBuilding({...newBuilding, campus: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    🗺️ Center on Map
-                  </button>
-                  <button
-                    onClick={() => setSelectedBuilding(null)}
-                    className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
-                  >
-                    Close Details
-                  </button>
+                    <option value="">Select Campus</option>
+                    <option value="St. George">St. George</option>
+                    <option value="UTSC">UTSC (Scarborough)</option>
+                    <option value="UTM">UTM (Mississauga)</option>
+                  </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Address
+                  </label>
+                  <textarea
+                    value={newBuilding.full_address}
+                    onChange={(e) => setNewBuilding({...newBuilding, full_address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Complete building address"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={newBuilding.latitude}
+                      onChange={(e) => setNewBuilding({...newBuilding, latitude: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="43.6629"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={newBuilding.longitude}
+                      onChange={(e) => setNewBuilding({...newBuilding, longitude: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="-79.3957"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Type
+                    </label>
+                    <select
+                      value={newBuilding.building_type}
+                      onChange={(e) => setNewBuilding({...newBuilding, building_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Type</option>
+                      <option value="Academic">Academic</option>
+                      <option value="Administrative">Administrative</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Library">Library</option>
+                      <option value="Gym">Gym</option>
+                      <option value="Research">Research</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateBuilding}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
+                >
+                  Add Building
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Building Modal */}
+      {showEditModal && editingBuilding && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Edit Building</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Code *
+                    </label>
+                    <input
+                      type="text"
+                      value={editingBuilding.building_code}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, building_code: e.target.value.toUpperCase()})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editingBuilding.building_name}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, building_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Campus
+                  </label>
+                  <select
+                    value={editingBuilding.campus || ""}
+                    onChange={(e) => setEditingBuilding({...editingBuilding, campus: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Campus</option>
+                    <option value="St. George">St. George</option>
+                    <option value="UTSC">UTSC (Scarborough)</option>
+                    <option value="UTM">UTM (Mississauga)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Address
+                  </label>
+                  <textarea
+                    value={editingBuilding.full_address || ""}
+                    onChange={(e) => setEditingBuilding({...editingBuilding, full_address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={editingBuilding.latitude || ""}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, latitude: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={editingBuilding.longitude || ""}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, longitude: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building Type
+                    </label>
+                    <select
+                      value={editingBuilding.building_type || ""}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, building_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Type</option>
+                      <option value="Academic">Academic</option>
+                      <option value="Administrative">Administrative</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Library">Library</option>
+                      <option value="Gym">Gym</option>
+                      <option value="Research">Research</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={editingBuilding.is_active}
+                      onChange={(e) => setEditingBuilding({...editingBuilding, is_active: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Building is active</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditBuilding}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
+                >
+                  Update Building
+                </button>
               </div>
             </div>
           </div>

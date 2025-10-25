@@ -47,6 +47,7 @@ class Course(db.Model):
             'assessment_methods': self.assessment_methods or [],
             'grading_scheme': self.grading_scheme,
             'typical_enrollment': self.typical_enrollment,
+            'expected_students': self.typical_enrollment,
             'workload_hours_per_week': self.workload_hours_per_week,
             'special_notes': self.special_notes,
             'is_active': self.is_active,

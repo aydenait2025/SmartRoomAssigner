@@ -12,6 +12,23 @@ from datetime import datetime
 
 bp = Blueprint('system', __name__)
 
+@bp.route('/dashboard/stats', methods=['GET'])
+def get_dashboard_stats():
+    """Get dashboard statistics for admin display"""
+    try:
+        stats = {
+            'total_buildings': Building.query.count(),
+            'total_rooms': Room.query.count(),
+            'available_rooms': Room.query.count(),  # For now, all rooms are available
+            'total_students': Student.query.count(),
+            'active_exams': Exam.query.count(),
+            'assigned_students': Assignment.query.count(),
+            'unassigned_students': Student.query.count() - Assignment.query.count()  # Simple calculation
+        }
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch stats: {str(e)}'}), 500
+
 @bp.route('/system/stats', methods=['GET'])
 @login_required
 def get_system_stats():
@@ -49,6 +66,11 @@ def get_system_stats():
     stats['rooms_by_type'] = {room_type: count for room_type, count in type_stats}
 
     return jsonify({'stats': stats}), 200
+
+# Test route - move to root level temporarily
+@bp.route('/test', methods=['GET'])
+def test_route():
+    return jsonify({'message': 'System routes working!'}), 200
 
 @bp.route('/system/health', methods=['GET'])
 def get_system_health():

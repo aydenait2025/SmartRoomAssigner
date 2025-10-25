@@ -11,7 +11,7 @@ function Login() {
   const [email, setEmail] = useState(
     localStorage.getItem("rememberedUsername") || "",
   );
-  const [password, setPassword] = useState("password");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(
     !!localStorage.getItem("rememberedUsername"),

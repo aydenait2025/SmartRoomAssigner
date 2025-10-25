@@ -1,14 +1,16 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models.exam import Exam, RoomAssignment
+from ..models.exam import Exam
+# Note: RoomAssignment is commented out in assignment.py for now
+# from ..models.assignment import RoomAssignment
 from ..models.room import Room
 from ..models.user import User
 from datetime import datetime, time
 import math
 
-schedules = Blueprint('schedules', __name__)
+bp = Blueprint('schedules', __name__)
 
-@schedules.route('', methods=['GET'])
+@bp.route('/schedules', methods=['GET'])
 def get_schedules():
     """Get paginated list of schedules/exams"""
     try:
@@ -20,10 +22,8 @@ def get_schedules():
         sort_by = request.args.get('sort_by', 'exam_date')
         sort_order = request.args.get('sort_order', 'desc')
 
-        # Base query
-        query = db.session.query(Exam).join(User, Exam.created_by == User.id).outerjoin(
-            RoomAssignment, Exam.id == RoomAssignment.exam_id
-        ).outerjoin(Room, RoomAssignment.room_id == Room.id)
+        # Base query - simplified without room assignments for now
+        query = db.session.query(Exam).join(User, Exam.created_by == User.id)
 
         # Apply search filter if provided
         if search:
@@ -58,16 +58,7 @@ def get_schedules():
         # Format schedules
         schedules_list = []
         for exam in schedules_data:
-            # Get room info from assignments
-            room_info = db.session.query(Room).join(
-                RoomAssignment, Room.id == RoomAssignment.room_id
-            ).filter(RoomAssignment.exam_id == exam.id).first()
-
-            # Count assignments for expected students
-            assignment_count = db.session.query(RoomAssignment).filter(
-                RoomAssignment.exam_id == exam.id
-            ).count()
-
+            # Simplified - no room info for now since RoomAssignment is not working
             schedule_dict = {
                 'id': exam.id,
                 'title': f"{exam.course_code} - {exam.course_name}" if exam.course_code else exam.course_name,
@@ -77,9 +68,9 @@ def get_schedules():
                 'date': exam.exam_date.isoformat() if exam.exam_date else None,
                 'start_time': exam.start_time.isoformat() if exam.start_time else None,
                 'end_time': exam.end_time.isoformat() if exam.end_time else None,
-                'building_code': room_info.building_code if room_info else '',
-                'room_number': room_info.room_number if room_info else '',
-                'expected_students': assignment_count,
+                'building_code': '',
+                'room_number': '',
+                'expected_students': 0,  # Placeholder
                 'description': f'Exam scheduled for {exam.course_code}',
                 'created_by': exam.created_by
             }
@@ -97,7 +88,7 @@ def get_schedules():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@schedules.route('', methods=['POST'])
+@bp.route('/schedules', methods=['POST'])
 def create_schedule():
     """Create a new schedule/exam"""
     try:
@@ -116,25 +107,7 @@ def create_schedule():
         db.session.add(exam)
         db.session.flush()  # Get the exam ID
 
-        # If room assignment data provided, create assignments
-        if data.get('building_code') and data.get('room_number'):
-            room = db.session.query(Room).filter(
-                Room.building_code == data['building_code'],
-                Room.room_number == data['room_number']
-            ).first()
-
-            if room:
-                # Create room assignments for expected students
-                expected_students = data.get('expected_students', 0)
-                for i in range(min(expected_students, room.capacity or 50)):  # Limit to room capacity
-                    assignment = RoomAssignment(
-                        exam_id=exam.id,
-                        room_id=room.id,
-                        student_id=999999,  # Placeholder for unassigned
-                        seat_number=f"{i+1}"
-                    )
-                    db.session.add(assignment)
-
+        # TODO: Add room assignment creation when RoomAssignment model is available
         db.session.commit()
 
         return jsonify({
@@ -146,7 +119,7 @@ def create_schedule():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@schedules.route('/<int:schedule_id>', methods=['PUT'])
+@bp.route('/<int:schedule_id>', methods=['PUT'])
 def update_schedule(schedule_id):
     """Update an existing schedule/exam"""
     try:
@@ -176,7 +149,7 @@ def update_schedule(schedule_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@schedules.route('/<int:schedule_id>', methods=['DELETE'])
+@bp.route('/<int:schedule_id>', methods=['DELETE'])
 def delete_schedule(schedule_id):
     """Delete a schedule/exam"""
     try:
@@ -184,8 +157,8 @@ def delete_schedule(schedule_id):
         if not exam:
             return jsonify({'error': 'Schedule not found'}), 404
 
-        # Delete related assignments first
-        db.session.query(RoomAssignment).filter_by(exam_id=schedule_id).delete()
+        # TODO: Delete related assignments first when RoomAssignment is available
+        # db.session.query(RoomAssignment).filter_by(exam_session_id=schedule_id).delete()
 
         # Delete exam
         db.session.delete(exam)

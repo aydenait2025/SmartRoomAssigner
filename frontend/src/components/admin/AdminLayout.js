@@ -156,6 +156,25 @@ function AdminLayout({ children, title = "Dashboard" }) {
                     <span className="ml-3 text-sm">Students</span>
                   </Link>
                   <Link
+                    to="/admin/department-management"
+                    className="flex items-center px-3 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200"
+                  >
+                    <svg
+                      className="w-4 h-4 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                    <span className="ml-3 text-sm">Departments</span>
+                  </Link>
+                  <Link
                     to="/admin/course-management"
                     className="flex items-center px-3 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200"
                   >
@@ -324,6 +343,27 @@ function AdminLayout({ children, title = "Dashboard" }) {
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                  />
+                </svg>
+              </Link>
+
+              {/* Departments */}
+              <Link
+                to="/admin/department-management"
+                className="flex justify-center py-2 px-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-200"
+                title="Departments"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                   />
                 </svg>
               </Link>

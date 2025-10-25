@@ -6,7 +6,8 @@ load_dotenv()
 class Config:
     """Base configuration"""
     SECRET_KEY = os.getenv('SECRET_KEY', 'a_very_secret_key')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///smartroomassign.db')
+    # PostgreSQL ONLY - hardcoded Neon database connection (no SQLite or environment variable fallback)
+    SQLALCHEMY_DATABASE_URI = 'postgresql://neondb_owner:npg_9YDSdm4cfVvQ@ep-jolly-credit-ahjpey1h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Email configuration
@@ -38,7 +39,7 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     """Testing environment configuration"""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
+    # Use same hardcoded PostgreSQL database for testing (as specified by requirements)
     WTF_CSRF_ENABLED = False
 
 # Configuration mapping

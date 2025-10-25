@@ -1,0 +1,7 @@
+course_code,course_name,department,expected_students
+CHEM101,Chemistry Fundamentals,Chemistry,180
+PHYS101,Physics Assets,Physics,120
+BIOL101,Biology Basics,Biology,150
+MATH101,Calculus I,Mathematics,200
+CS102,Data Structures,Computer Science,100
+ENG101,English Composition,English,120

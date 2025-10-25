@@ -17,6 +17,7 @@ import CourseManagement from "./components/admin/CourseManagement";
 import AssignmentTab from "./components/admin/AssignmentTab";
 import BuildingLocator from "./components/admin/BuildingLocator";
 import ScheduleManagement from "./components/admin/ScheduleManagement";
+import DepartmentManagement from "./components/admin/DepartmentManagement";
 import Reports from "./components/admin/Reports";
 import Notifications from "./components/admin/Notifications";
 import HelpSupport from "./components/admin/HelpSupport";
@@ -51,7 +52,7 @@ function App() {
   };
 
   const isAdmin = () => {
-    return localStorage.getItem("userRole") === "admin";
+    return localStorage.getItem("userRole") === "Administrator";
   };
 
   const isStudent = () => {
@@ -97,6 +98,12 @@ function App() {
               path="/admin/student-management"
               element={
                 isAdmin() ? <StudentManagement /> : <Navigate to="/login" />
+              }
+            />
+            <Route
+              path="/admin/department-management"
+              element={
+                isAdmin() ? <DepartmentManagement /> : <Navigate to="/login" />
               }
             />
             <Route

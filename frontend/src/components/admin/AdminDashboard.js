@@ -9,7 +9,7 @@ function AdminDashboard() {
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [stats, setStats] = useState({
     total_buildings: 36,
-    total_rooms: 3,
+    total_rooms: 1,
     available_rooms: 3,
     total_students: 0,
     active_exams: 0,
