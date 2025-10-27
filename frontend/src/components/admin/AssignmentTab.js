@@ -6,17 +6,36 @@ function AssignmentTab() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [algorithms, setAlgorithms] = useState([]);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState(null);
   const perPage = 20;
+
+  const fetchAlgorithms = async () => {
+    try {
+      const response = await axios.get('/api/algorithms', { withCredentials: true });
+      const algos = response.data.algorithms || [];
+      setAlgorithms(algos);
+      // Set default algorithm (Smart Alphabetical Grouping)
+      const defaultAlgo = algos.find(algo => algo.name === 'Smart Alphabetical Grouping' && algo.is_active) ||
+                         algos.find(algo => algo.is_active) ||
+                         algos[0];
+      setSelectedAlgorithm(defaultAlgo);
+    } catch (err) {
+      console.error('Failed to fetch algorithms:', err);
+    }
+  };
 
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/assignments?page=${currentPage}&per_page=${perPage}`, {
+      const response = await axios.get(`/api/assignments?page=${currentPage}&per_page=${perPage}`, {
         withCredentials: true,
       });
       setAssignments(response.data.assignments || []);
@@ -32,8 +51,70 @@ function AssignmentTab() {
   };
 
   useEffect(() => {
+    fetchAlgorithms();
     fetchAssignments();
   }, [currentPage]);
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [currentPage]);
+
+  const handleSmartAssign = async () => {
+    if (assigning) return;
+
+    setMessage("");
+    setError("");
+    setAssigning(true);
+    setProgress(0);
+    setProgressMessage("Initializing smart assignment...");
+
+    try {
+      // Start progress simulation for advanced alphabetical algorithm
+      const progressSteps = [
+        { progress: 10, message: "Getting available rooms...", duration: 500 },
+        { progress: 20, message: "Finding eligible students...", duration: 800 },
+        { progress: 25, message: "Analyzing student data...", duration: 600 },
+        { progress: 30, message: "Calculating optimal distribution...", duration: 800 },
+        { progress: 40, message: "Sorting students alphabetically...", duration: 1000 },
+        { progress: 45, message: "Creating alphabetical groups...", duration: 700 },
+        { progress: 50, message: "Initializing room assignment...", duration: 500 },
+        { progress: 90, message: "Assigning groups to rooms...", duration: 2000 },
+        { progress: 95, message: "Saving assignments to database...", duration: 800 },
+        { progress: 100, message: "Smart assignment complete! 🎯", duration: 300 },
+      ];
+
+      // Simulate progress steps
+      for (const step of progressSteps) {
+        await new Promise(resolve => setTimeout(resolve, step.duration));
+        setProgress(step.progress);
+        setProgressMessage(step.message);
+      }
+
+      // Make actual API call with selected algorithm
+      const response = await axios.post(
+        "/api/assignments/smart-assign",
+        {
+          algorithm_id: selectedAlgorithm?.id || null
+        },
+        { withCredentials: true },
+      );
+
+      setMessage(response.data.message || "Smart assignment completed successfully!");
+      fetchAssignments(); // Refresh assignments after running algorithm
+
+    } catch (err) {
+      setError(err.response?.data?.error || "Smart assignment failed. Please try again.");
+      setProgress(0);
+      setProgressMessage("");
+    } finally {
+      setAssigning(false);
+      // Clear progress after a delay
+      setTimeout(() => {
+        setProgress(0);
+        setProgressMessage("");
+      }, 2000);
+    }
+  };
 
   const handleAssignStudents = async () => {
     if (assigning) return;
@@ -70,9 +151,25 @@ function AssignmentTab() {
           <p className="text-sm text-gray-600 mt-1">
             Assign students to exam seating locations so they know where to take their exams.
           </p>
+          {/* Current Algorithm Info */}
+          {selectedAlgorithm && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-md">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">🤖</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-900 truncate">
+                    Using: {selectedAlgorithm.name}
+                  </p>
+                  <p className="text-xs text-blue-700 truncate">
+                    {selectedAlgorithm.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <button
-          onClick={handleAssignStudents}
+          onClick={handleSmartAssign}
           disabled={assigning || loading}
           className="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
         >
@@ -82,15 +179,51 @@ function AssignmentTab() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Assigning Seats...
+              Smart Assigning...
             </span>
           ) : (
             <>
-              📝 Assign Exam Seats
+              🎯 Smart Assign
             </>
           )}
         </button>
       </div>
+
+      {/* Progress Bar - Only show when assigning */}
+      {assigning && progress > 0 && (
+        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-medium text-gray-900">Smart Assignment Progress</h3>
+            <span className="text-sm font-medium text-gray-600">{progress}% Complete</span>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+
+          {/* Progress Message */}
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              progress < 30 ? 'bg-red-500' :
+              progress < 60 ? 'bg-yellow-500' :
+              progress < 90 ? 'bg-blue-500' : 'bg-green-500'
+            }`}></div>
+            <span className="text-sm text-gray-700 font-medium">{progressMessage}</span>
+          </div>
+
+          {/* ETA or additional info */}
+          <div className="mt-2 text-xs text-gray-500">
+            {progress < 30 && "Analyzing system data..."}
+            {progress >= 30 && progress < 60 && "Processing constraints..."}
+            {progress >= 60 && progress < 90 && "Optimizing assignments..."}
+            {progress >= 90 && "Finalizing results..."}
+          </div>
+        </div>
+      )}
 
       {/* Success/Error Messages */}
       {message && (

@@ -14,7 +14,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import RoomManagement from "./components/admin/RoomManagement";
 import StudentManagement from "./components/admin/StudentManagement";
 import CourseManagement from "./components/admin/CourseManagement";
-import AssignmentTab from "./components/admin/AssignmentTab";
+import DragDropAssignmentTab from "./components/admin/DragDropAssignmentTab";
 import BuildingLocator from "./components/admin/BuildingLocator";
 import ScheduleManagement from "./components/admin/ScheduleManagement";
 import DepartmentManagement from "./components/admin/DepartmentManagement";
@@ -120,7 +120,7 @@ function App() {
             />
             <Route
               path="/admin/assignment-tab"
-              element={isAdmin() ? <AssignmentTab /> : <Navigate to="/login" />}
+              element={isAdmin() ? <DragDropAssignmentTab /> : <Navigate to="/login" />}
             />
             <Route
               path="/admin/buildings"

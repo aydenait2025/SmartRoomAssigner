@@ -51,13 +51,19 @@ class User(UserMixin, db.Model):
     def get_id(self):
         return str(self.id)
 
-    def is_admin(self):
-        return self.role_id == 1  # Assuming role_id=1 is admin
-
     def check_password(self, password):
         """Check if the provided password matches the stored hash"""
         from werkzeug.security import check_password_hash
         return check_password_hash(self.password_hash, password)
+
+    def set_password(self, password):
+        """Set the password hash"""
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+
+    def is_admin(self):
+        """Check if user is administrator"""
+        return self.role and self.role.name.lower() in ['administrator', 'admin']
 
     def to_dict(self):
         """Convert user to dictionary for JSON serialization"""

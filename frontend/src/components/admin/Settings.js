@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { useToast } from "../../hooks/useToast";
 import AdminLayout from "./AdminLayout";
+import AlgorithmManagementTab from "./AlgorithmManagementTab";
 
 function Settings() {
   const { successToast, infoToast } = useToast();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState("algorithms");
 
   // Change password modal state
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -279,401 +283,481 @@ function Settings() {
   };
 
   const tabs = [
-    { id: "general", label: "⚙️ General", icon: "⚙️" },
-    { id: "notifications", label: "🔔 Notifications", icon: "🔔" },
-    { id: "system", label: "🔧 System", icon: "🔧" },
-    { id: "security", label: "🔒 Security", icon: "🔒" },
+    { id: "algorithms", label: "Assignment Algorithms", icon: "🤖" },
+    { id: "general", label: "General", icon: "⚙️" },
+    { id: "notifications", label: "Notifications", icon: "🔔" },
+    { id: "system", label: "System", icon: "🔧" },
+    { id: "security", label: "Security", icon: "🔒" },
   ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "algorithms":
+        return <AlgorithmManagementTab />;
+
+      case "general":
+        return (
+          <div className="space-y-8">
+            {/* General Settings */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="text-2xl">⚙️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">General Settings</h3>
+                    <p className="text-sm text-gray-600">Basic configuration and preferences for your application</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {generalSettings.map((setting) => (
+                    <div key={setting.key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {setting.label}
+                      </label>
+                      <div className="max-w-xs">
+                        {renderSettingInput(setting)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <button
+                onClick={handleSaveSettings}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        );
+
+      case "notifications":
+        return (
+          <div className="space-y-8">
+            {/* Notification Settings */}
+            <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="text-xl text-slate-600">🔔</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                    <p className="text-sm text-gray-500">Manage alerts and communication preferences</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-white">
+                <div className="space-y-6">
+                  {/* Email Notifications */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">📧</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Email Notifications
+                        </label>
+                        <p className="text-xs text-gray-500">Receive email alerts for important events</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="emailNotifications"
+                        type="checkbox"
+                        checked={settings.emailNotifications}
+                        onChange={(e) => handleSettingChange('emailNotifications', 'emailNotifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Push Notifications */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">📱</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Push Notifications
+                        </label>
+                        <p className="text-xs text-gray-500">Browser notifications for real-time updates</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="pushNotifications"
+                        type="checkbox"
+                        checked={settings.pushNotifications}
+                        onChange={(e) => handleSettingChange('pushNotifications', 'pushNotifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* SMS Notifications */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">💬</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          SMS Notifications
+                        </label>
+                        <p className="text-xs text-gray-500">Text message alerts for critical notifications</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="smsNotifications"
+                        type="checkbox"
+                        checked={settings.smsNotifications}
+                        onChange={(e) => handleSettingChange('smsNotifications', 'smsNotifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Notification Frequency */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-900">
+                        Frequency
+                      </label>
+                      <p className="text-xs text-gray-500">How often you want to receive notifications</p>
+                      <div className="max-w-xs">
+                        <select
+                          value={settings.notificationFrequency}
+                          onChange={(e) => handleSettingChange('notificationFrequency', 'notificationFrequency', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="immediate">Immediate</option>
+                          <option value="hourly">Hourly Digest</option>
+                          <option value="daily">Daily Digest</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <button
+                onClick={handleSaveSettings}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        );
+
+      case "system":
+        return (
+          <div className="space-y-8">
+            {/* System Settings */}
+            <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="text-xl text-slate-600">🔧</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">System</h3>
+                    <p className="text-sm text-gray-500">Manage automated processes and system behavior</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-white">
+                <div className="space-y-6">
+                  {/* Auto Assignment */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">⚡</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Auto Assignment
+                        </label>
+                        <p className="text-xs text-gray-500">Automatically assign rooms to schedules</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="autoAssignment"
+                        type="checkbox"
+                        checked={settings.autoAssignment}
+                        onChange={(e) => handleSettingChange('autoAssignment', 'autoAssignment', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Conflict Detection */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">⚠️</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Conflict Detection
+                        </label>
+                        <p className="text-xs text-gray-500">Detect and alert conflicting schedules</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="conflictDetection"
+                        type="checkbox"
+                        checked={settings.conflictDetection}
+                        onChange={(e) => handleSettingChange('conflictDetection', 'conflictDetection', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* AI-Powered Scheduling */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">🤖</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          AI-Powered Scheduling
+                        </label>
+                        <p className="text-xs text-gray-500">Optimize room assignments using artificial intelligence</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="aiScheduling"
+                        type="checkbox"
+                        checked={settings.aiScheduling || false}
+                        onChange={(e) => handleSettingChange('aiScheduling', 'aiScheduling', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Predictive Analytics */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">📊</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Predictive Analytics
+                        </label>
+                        <p className="text-xs text-gray-500">AI-driven forecasting and usage pattern analysis</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="predictiveAnalytics"
+                        type="checkbox"
+                        checked={settings.predictiveAnalytics || false}
+                        onChange={(e) => handleSettingChange('predictiveAnalytics', 'predictiveAnalytics', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Smart Maintenance */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">🔧</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Smart Maintenance
+                        </label>
+                        <p className="text-xs text-gray-500">AI-powered preventive maintenance scheduling</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="smartMaintenance"
+                        type="checkbox"
+                        checked={settings.smartMaintenance || false}
+                        onChange={(e) => handleSettingChange('smartMaintenance', 'smartMaintenance', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Backup Frequency */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-900">
+                        Backup Frequency
+                      </label>
+                      <p className="text-xs text-gray-500">How often system backups should run</p>
+                      <div className="max-w-xs">
+                        <select
+                          value={settings.backupFrequency}
+                          onChange={(e) => handleSettingChange('backupFrequency', 'backupFrequency', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="hourly">Hourly</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <button
+                onClick={handleSaveSettings}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        );
+
+      case "security":
+        return (
+          <div className="space-y-8">
+            {/* Security Settings */}
+            <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="text-xl text-slate-600">🔒</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+                    <p className="text-sm text-gray-500">Manage security features and access controls</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-white">
+                <div className="space-y-6">
+                  {/* Enable Two-Factor Authentication */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">🛡️</span>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Enable Two-Factor Authentication
+                        </label>
+                        <p className="text-xs text-gray-500">Add an extra layer of security to your account</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="twoFactorAuth"
+                        type="checkbox"
+                        checked={settings.twoFactorAuth}
+                        onChange={(e) => handleSettingChange('twoFactorAuth', 'twoFactorAuth', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Change Password Button */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="text-xs">🔑</span>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-900">
+                          Account Security
+                        </label>
+                        <p className="text-xs text-gray-500 mb-2">Update your login credentials</p>
+                        <button
+                          onClick={() => setShowChangePasswordModal(true)}
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                        >
+                          Change Password
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <button
+                onClick={handleSaveSettings}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <AdminLayout title="Settings">
-      {/* Header */}
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Settings tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
 
-
-      {/* Settings Content */}
+      {/* Tab Content */}
       <div className="space-y-8">
-        {/* General Settings */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <span className="text-2xl">⚙️</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">General Settings</h3>
-                <p className="text-sm text-gray-600">Basic configuration and preferences for your application</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {generalSettings.map((setting) => (
-                <div key={setting.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {setting.label}
-                  </label>
-                  <div className="max-w-xs">
-                    {renderSettingInput(setting)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Notification Settings */}
-        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <span className="text-xl text-slate-600">🔔</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                <p className="text-sm text-gray-500">Manage alerts and communication preferences</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6 bg-white">
-            <div className="space-y-6">
-              {/* Email Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">📧</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Email Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Receive email alerts for important events</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="emailNotifications"
-                    type="checkbox"
-                    checked={settings.emailNotifications}
-                    onChange={(e) => handleSettingChange('emailNotifications', 'emailNotifications', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Push Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">📱</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Push Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Browser notifications for real-time updates</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="pushNotifications"
-                    type="checkbox"
-                    checked={settings.pushNotifications}
-                    onChange={(e) => handleSettingChange('pushNotifications', 'pushNotifications', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* SMS Notifications */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">💬</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      SMS Notifications
-                    </label>
-                    <p className="text-xs text-gray-500">Text message alerts for critical notifications</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="smsNotifications"
-                    type="checkbox"
-                    checked={settings.smsNotifications}
-                    onChange={(e) => handleSettingChange('smsNotifications', 'smsNotifications', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Notification Frequency */}
-              <div className="border-t border-gray-100 pt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    Frequency
-                  </label>
-                  <p className="text-xs text-gray-500">How often you want to receive notifications</p>
-                  <div className="max-w-xs">
-                    <select
-                      value={settings.notificationFrequency}
-                      onChange={(e) => handleSettingChange('notificationFrequency', 'notificationFrequency', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="immediate">Immediate</option>
-                      <option value="hourly">Hourly Digest</option>
-                      <option value="daily">Daily Digest</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* System Settings */}
-        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <span className="text-xl text-slate-600">🔧</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">System</h3>
-                <p className="text-sm text-gray-500">Manage automated processes and system behavior</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6 bg-white">
-            <div className="space-y-6">
-              {/* Auto Assignment */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">⚡</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Auto Assignment
-                    </label>
-                    <p className="text-xs text-gray-500">Automatically assign rooms to schedules</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="autoAssignment"
-                    type="checkbox"
-                    checked={settings.autoAssignment}
-                    onChange={(e) => handleSettingChange('autoAssignment', 'autoAssignment', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Conflict Detection */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">⚠️</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Conflict Detection
-                    </label>
-                    <p className="text-xs text-gray-500">Detect and alert conflicting schedules</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="conflictDetection"
-                    type="checkbox"
-                    checked={settings.conflictDetection}
-                    onChange={(e) => handleSettingChange('conflictDetection', 'conflictDetection', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* AI-Powered Scheduling */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">🤖</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      AI-Powered Scheduling
-                    </label>
-                    <p className="text-xs text-gray-500">Optimize room assignments using artificial intelligence</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="aiScheduling"
-                    type="checkbox"
-                    checked={settings.aiScheduling || false}
-                    onChange={(e) => handleSettingChange('aiScheduling', 'aiScheduling', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Predictive Analytics */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">📊</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Predictive Analytics
-                    </label>
-                    <p className="text-xs text-gray-500">AI-driven forecasting and usage pattern analysis</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="predictiveAnalytics"
-                    type="checkbox"
-                    checked={settings.predictiveAnalytics || false}
-                    onChange={(e) => handleSettingChange('predictiveAnalytics', 'predictiveAnalytics', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Smart Maintenance */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">🔧</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Smart Maintenance
-                    </label>
-                    <p className="text-xs text-gray-500">AI-powered preventive maintenance scheduling</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="smartMaintenance"
-                    type="checkbox"
-                    checked={settings.smartMaintenance || false}
-                    onChange={(e) => handleSettingChange('smartMaintenance', 'smartMaintenance', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Backup Frequency */}
-              <div className="border-t border-gray-100 pt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    Backup Frequency
-                  </label>
-                  <p className="text-xs text-gray-500">How often system backups should run</p>
-                  <div className="max-w-xs">
-                    <select
-                      value={settings.backupFrequency}
-                      onChange={(e) => handleSettingChange('backupFrequency', 'backupFrequency', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="hourly">Hourly</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-
-        {/* Security Settings */}
-        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <span className="text-xl text-slate-600">🔒</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Security</h3>
-                <p className="text-sm text-gray-500">Manage security features and access controls</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6 bg-white">
-            <div className="space-y-6">
-              {/* Enable Two-Factor Authentication */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">🛡️</span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                      Enable Two-Factor Authentication
-                    </label>
-                    <p className="text-xs text-gray-500">Add an extra layer of security to your account</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    id="twoFactorAuth"
-                    type="checkbox"
-                    checked={settings.twoFactorAuth}
-                    onChange={(e) => handleSettingChange('twoFactorAuth', 'twoFactorAuth', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Change Password Button */}
-              <div className="border-t border-gray-100 pt-4">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs">🔑</span>
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-900">
-                      Account Security
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">Update your login credentials</p>
-                    <button
-                      onClick={() => setShowChangePasswordModal(true)}
-                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-                    >
-                      Change Password
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <button
-            onClick={handleSaveSettings}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
-          >
-            Save Settings
-          </button>
-        </div>
+        {renderTabContent()}
       </div>
 
       {/* Change Password Modal */}

@@ -33,11 +33,35 @@ app.register_blueprint(system_bp, url_prefix='/api/system')
 
 # Register courses blueprint
 from app.routes.courses import bp as courses_bp
-app.register_blueprint(courses_bp)
+app.register_blueprint(courses_bp, url_prefix='/api')
+
+# Register rooms blueprint
+from app.routes.rooms import bp as rooms_bp
+app.register_blueprint(rooms_bp, url_prefix='/api')
+
+# Register exams blueprint
+from app.routes.exams import bp as exams_bp
+app.register_blueprint(exams_bp, url_prefix='/api')
 
 # Register students blueprint for user-based student management
 from app.routes.students import bp as students_bp
 app.register_blueprint(students_bp)
+
+# Register algorithms blueprint
+from app.routes.algorithms import bp as algorithms_bp
+app.register_blueprint(algorithms_bp, url_prefix='/api')
+
+# Register assignments blueprint
+from app.routes.assignments import bp as assignments_bp
+app.register_blueprint(assignments_bp, url_prefix='/api')
+
+# Register notifications blueprint
+from app.routes.notifications import bp as notifications_bp
+app.register_blueprint(notifications_bp, url_prefix='/api')
+
+# Register dashboard blueprint
+from app.routes.dashboard import bp as dashboard_bp
+app.register_blueprint(dashboard_bp, url_prefix='/api')
 
 # Other blueprints commented out due to model conflicts
 # from app.routes.users import bp as users_bp

@@ -220,6 +220,48 @@ def export_courses_csv():
     )
     return response
 
+@bp.route('/courses/with-students', methods=['GET'])
+@login_required
+def get_courses_with_students():
+    """Get all courses with their enrolled students for drag-and-drop assignment"""
+    try:
+        courses = Course.query.all()
+
+        courses_data = []
+        for course in courses:
+            # Get enrolled students (simplified - using all students for demo)
+            # In a real system, this would be based on course enrollments
+            from ..models.user import User, Role
+
+            # Get all student users for demo purposes
+            student_role = Role.query.filter_by(name='student').first()
+            enrolled_students = []
+            if student_role:
+                enrolled_students = User.query.filter_by(role_id=student_role.id).limit(20).all()  # Limit for demo
+
+            # For now, all courses get the same student set but with different counts
+            course_data = {
+                'id': course.id,
+                'name': f"{course.course_code} - {course.course_name}",
+                'course_code': course.course_code,
+                'course_name': course.course_name,
+                'student_count': len(enrolled_students),
+                'expected_students': course.typical_enrollment or 30,
+                'students': [
+                    {
+                        'id': student.id,
+                        'name': student.name,
+                        'email': student.email
+                    } for student in enrolled_students
+                ]
+            }
+            courses_data.append(course_data)
+
+        return jsonify({'courses': courses_data}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/courses/import-csv', methods=['POST'])
 @login_required
 def import_courses_csv():

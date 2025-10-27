@@ -52,10 +52,8 @@ class AuthService:
     def initialize_roles():
         """Initialize default roles in database"""
         roles_data = [
-            Role(name='admin'),
-            Role(name='professor'),
-            Role(name='ta'),
-            Role(name='student')
+            Role(name='Administrator'),
+            Role(name='Student')
         ]
 
         for role in roles_data:

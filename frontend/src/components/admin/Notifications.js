@@ -1,67 +1,131 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useToast } from "../../hooks/useToast";
 import AdminLayout from "./AdminLayout";
 
 function Notifications() {
   const { successToast, infoToast } = useToast();
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "warning",
-      title: "Room Assignment Required",
-      message:
-        "3 exams are pending room assignment. Please review and assign rooms.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      read: false,
-      priority: "high",
-    },
-    {
-      id: 2,
-      type: "error",
-      title: "Student Unassigned",
-      message:
-        "27 students are still unassigned for tomorrow's CS 301 Final Exam.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      read: false,
-      priority: "critical",
-    },
-    {
-      id: 3,
-      type: "info",
-      title: "Room Conflict Detected",
-      message: "MB-101 is double-booked for 2pm-4pm on December 10th.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-      read: true,
-      priority: "medium",
-    },
-    {
-      id: 4,
-      type: "success",
-      title: "Assignment Completed",
-      message: "MATH 201 Midterm assignments have been successfully completed.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      read: true,
-      priority: "low",
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] = useState("all");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
-    );
+  // Fetch notifications on component mount
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching notifications...');
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      console.log('API Base URL:', baseUrl);
+      const response = await fetch(`${baseUrl}/api/notifications`, {
+        credentials: 'include'
+      });
+      console.log('Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API Response data:', data);
+        // Transform API data to match frontend format
+        const transformedNotifications = data.notifications.map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: mapTypeFromBackend(notification.type),
+          priority: notification.priority,
+          read: notification.read,
+          timestamp: new Date(notification.created_at),
+          action_required: notification.action_required,
+          action_url: notification.action_url
+        }));
+        console.log('Transformed notifications:', transformedNotifications);
+        setNotifications(transformedNotifications);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to fetch notifications - Status:', response.status, 'Response:', errorText);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
-    successToast("All notifications marked as read");
+  const mapTypeFromBackend = (backendType) => {
+    const typeMap = {
+      'system_alert': 'info',
+      'maintenance': 'warning',
+      'exam_reminder': 'error',
+      'room_assignment': 'warning',
+      'registration_deadline': 'warning',
+      'grade_posted': 'success',
+      'fee_reminder': 'warning',
+      'policy_update': 'info'
+    };
+    return typeMap[backendType] || 'info';
   };
 
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
-    infoToast("Notification deleted");
+  const markAsRead = async (id) => {
+    try {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/notifications/${id}/read`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
+        );
+      } else {
+        console.error('Failed to mark notification as read');
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/notifications/mark-all-read`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        successToast(`Marked ${result.message.match(/(\d+)/)?.[1] || 'all'} notifications as read`);
+        // Refresh notifications
+        await fetchNotifications();
+      } else {
+        console.error('Failed to mark all notifications as read');
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/notifications/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+        infoToast("Notification deleted");
+      } else {
+        console.error('Failed to delete notification');
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
   const filteredNotifications = notifications.filter((notif) => {
@@ -134,6 +198,23 @@ function Notifications() {
           >
             {showUnreadOnly ? "Show All" : "Unread Only"}
           </button>
+          <button
+            onClick={() => {
+              const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+              fetch(`${baseUrl}/api/notifications/test`, {
+                credentials: 'include'
+              })
+              .then(res => res.json())
+              .then(data => {
+                console.log('TEST API Response:', data);
+                alert(`API says: Found ${data.debug.total_notifications} notifications\n\nCheck browser console for details`);
+              })
+              .catch(err => console.error('TEST API Error:', err));
+            }}
+            className="px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200"
+          >
+            Test API
+          </button>
         </div>
       </div>
 
@@ -156,9 +237,19 @@ function Notifications() {
         ))}
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-600">Loading notifications...</span>
+          </div>
+        </div>
+      )}
+
       {/* Notifications List */}
       <div className="space-y-2">
-        {filteredNotifications.length === 0 ? (
+        {!loading && filteredNotifications.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

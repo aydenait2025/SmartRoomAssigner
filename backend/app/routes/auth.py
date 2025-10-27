@@ -10,31 +10,36 @@ bp = Blueprint('auth', __name__)
 def login():
     """Handle user login using email and password"""
     data = request.get_json()
-    email = data.get('email')  # Changed from username to email
+    email = data.get('email')
     password = data.get('password')
 
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
 
-    # ACCEPT ANY EMAIL AND PASSWORD
-    user = type('User', (), {
-        'id': 1,
-        'name': 'Test User',
-        'email': email,
-        'role_id': 1,
-        'is_active': True,
-        'created_at': None,
-        'to_dict': lambda: {
-            'id': 1,
-            'name': 'Test User',
-            'email': email,
-            'role_id': 1,
-            'is_active': True,
-            'created_at': None
-        }
-    })()
+    # Authenticate user against database
+    user, error = AuthService.authenticate_user(email, password)
+    if error:
+        return jsonify({'error': error}), 401
+
+    # Check if user account is active
+    if not user.is_active:
+        return jsonify({'error': 'Account is not active'}), 401
+
+    # Login the user
     login_user(user)
-    return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
+
+    # Get role name for frontend - must match frontend expectations exactly
+    role_name_frontend = 'Administrator' if user.is_admin() else 'student'
+
+    # Return user info
+    user_response = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'role': role_name_frontend
+    }
+
+    return jsonify({'message': 'Login successful', 'user': user_response}), 200
 
 @bp.route('/logout', methods=['POST'])
 @login_required

@@ -11,6 +11,7 @@ from .student import Student
 # from .academic_term import AcademicTerm  # File doesn't exist
 # from .course_enrollment import CourseEnrollment  # File doesn't exist
 from .assignment import Assignment  # File exists
+from .assignment_algorithm import AssignmentAlgorithm
 # from .faculty_course_assignment import FacultyCourseAssignment  # File doesn't exist
 # from .exam_session import ExamSession  # File doesn't exist
 # from .room_assignment import RoomAssignment  # File doesn't exist
@@ -19,9 +20,10 @@ from .assignment import Assignment  # File exists
 # from .equipment_inventory import EquipmentInventory  # File doesn't exist
 # from .room_equipment_assignment import RoomEquipmentAssignment  # File doesn't exist
 from .room_reservation import RoomReservation
+from .system_notification import SystemNotification
 
 # Re-export for convenience
 __all__ = [
     'User', 'Role', 'Building', 'Room', 'AcademicDepartment', 'Course', 'Exam',
-    'Student', 'Assignment', 'RoomReservation'
+    'Student', 'Assignment', 'AssignmentAlgorithm', 'RoomReservation', 'SystemNotification'
 ]

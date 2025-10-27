@@ -20,6 +20,13 @@ function RoomManagement() {
   const [allRooms, setAllRooms] = useState([]);
   const [departmentId, setDepartmentId] = useState(null);
 
+  // Room counts for tab headers
+  const [roomCounts, setRoomCounts] = useState({
+    total_university: 0,
+    departmental: 0
+  });
+  const [hasLoadedCounts, setHasLoadedCounts] = useState(false);
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive'
@@ -33,6 +40,7 @@ function RoomManagement() {
   const [editingRoom, setEditingRoom] = useState(null);
   const [showAssignConfirm, setShowAssignConfirm] = useState(false);
   const [roomToAssign, setRoomToAssign] = useState(null);
+  const [modalError, setModalError] = useState(""); // Error state for modals
   const [newRoom, setNewRoom] = useState({
     building_id: "",
     room_number: "",
@@ -70,19 +78,19 @@ function RoomManagement() {
     }
   };
 
-  // Initialize component
+  // Initialize component - fetch only essential data
   useEffect(() => {
     fetchInitialData();
   }, []);
 
-  // Combined initial data fetch
+  // Combined initial data fetch - optimized
   const fetchInitialData = async () => {
     try {
       setLoading(true);
 
-      // Fetch buildings and user data first
+      // Fetch buildings, user data, and room counts in parallel
       const [buildingsResponse, userResponse] = await Promise.all([
-        axios.get(`/buildings?per_page=1000`, { withCredentials: true }),
+        axios.get(`/buildings?per_page=500`, { withCredentials: true }), // Reduced from 1000
         axios.get('/auth/user', { withCredentials: true })
       ]);
 
@@ -92,8 +100,8 @@ function RoomManagement() {
       const newDepartmentId = userResponse.data.user?.department_id || null;
       setDepartmentId(newDepartmentId);
 
-      // Now fetch rooms with the department ID
-      await fetchRoomsData(newDepartmentId);
+      // Fetch ONLY the current page of rooms initially (not ALL rooms)
+      await fetchRoomsPage(1, newDepartmentId);
 
     } catch (err) {
       console.error("Failed to load initial data:", err);
@@ -107,59 +115,102 @@ function RoomManagement() {
     }
   };
 
-  const fetchRoomsData = async (deptId = departmentId) => {
+  // Fetch specific page of rooms - pagination optimized
+  const fetchRoomsPage = async (pageNum = currentPage, deptId = departmentId) => {
     try {
-      // Fetch all rooms without pagination
-      const allResponse = await axios.get(`/rooms?per_page=10000`, { withCredentials: true });
-      const allRoomsData = allResponse.data.rooms || [];
-      setAllRooms(allRoomsData);
+      setLoading(true);
 
-      // Fetch departmental rooms if we have department ID
-      let departmentalData = [];
-      if (deptId) {
-        try {
-          const departmentalResponse = await axios.get(`/rooms?department_id=${deptId}&per_page=10000`, { withCredentials: true });
-          departmentalData = departmentalResponse.data.rooms || [];
-        } catch (deptErr) {
-          console.warn("Failed to fetch departmental rooms:", deptErr);
-          departmentalData = [];
+      // Basic filtering parameters
+      let params = new URLSearchParams({
+        page: pageNum,
+        per_page: perPage,
+        status: statusFilter !== 'all' ? statusFilter : undefined
+      }).toString();
+
+      // Add department filter if viewing departmental rooms
+      if (currentView === 'departmental' && deptId) {
+        params += `&department_id=${deptId}`;
+      }
+
+      const response = await axios.get(`/rooms?${params}`, { withCredentials: true });
+      const roomsData = response.data.rooms || [];
+
+      // Update room view data and counts
+      setTotalPages(response.data.total_pages || Math.ceil(roomsData.length / perPage));
+      setTotalActive(response.data.total_active || 0);
+
+      // For "departmental view", show departmental rooms
+      if (currentView === 'departmental' && deptId) {
+        setDepartmentalRooms(roomsData);
+        setRooms(roomsData);
+        setTotalItems(response.data.total_items || roomsData.length);
+
+        // Update departmental count when departmental rooms are loaded
+        setRoomCounts(prev => ({
+          ...prev,
+          departmental: response.data.total_items || roomsData.length
+        }));
+
+        // First time loading departmental view, also fetch and set total university count
+        if (!hasLoadedCounts) {
+          // Fetch total count once
+          (async () => {
+            try {
+              const totalResponse = await axios.get('/rooms?per_page=1&page=1&status=all', { withCredentials: true });
+              setRoomCounts(prev => ({
+                ...prev,
+                total_university: totalResponse.data.total_items || 0
+              }));
+            } catch (err) {
+              console.error("Failed to fetch total university count:", err);
+            }
+          })();
+          setHasLoadedCounts(true);
+        }
+      } else {
+        // For "all rooms view", show all rooms
+        setAllRooms(roomsData);
+        setRooms(roomsData);
+        setTotalItems(response.data.total_items || roomsData.length);
+
+        // Update total university count from API response (this is the total across all records)
+        if (!hasLoadedCounts) {
+          setRoomCounts(prev => ({
+            ...prev,
+            total_university: response.data.total_items || 0
+          }));
+          setHasLoadedCounts(true);
         }
       }
-      setDepartmentalRooms(departmentalData);
-
-      // Set current rooms based on view
-      if (currentView === 'departmental') {
-        setRooms(departmentalData);
-        setTotalItems(departmentalData.length);
-      } else {
-        setRooms(allRoomsData);
-        setTotalItems(allRoomsData.length);
-      }
-
-      // Calculate active rooms
-      const activeCount = allRoomsData.filter(room => room.is_active && room.is_bookable).length;
-      setTotalActive(activeCount);
 
     } catch (err) {
-      console.error("Failed to fetch room data:", err);
+      console.error("Failed to fetch room page:", err);
       setAllRooms([]);
       setDepartmentalRooms([]);
       setRooms([]);
       setTotalItems(0);
+      setTotalPages(1);
       setTotalActive(0);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Update rooms when view changes
+  // Fetch rooms when filters change or page changes
   useEffect(() => {
-    if (allRooms.length > 0) {
-      if (currentView === 'departmental') {
-        setRooms(departmentalRooms);
-        setTotalItems(departmentalRooms.length);
-      } else {
-        setRooms(allRooms);
-        setTotalItems(allRooms.length);
-      }
+    if (buildings.length > 0) { // Only fetch if we have buildings loaded
+      fetchRoomsPage(currentPage); // Fetch the current page
+    }
+  }, [currentView, statusFilter, buildingFilter, typeFilter, sortBy, currentPage]);
+
+  // Update rooms when view changes or data is loaded
+  useEffect(() => {
+    if (currentView === 'departmental' && departmentalRooms.length > 0) {
+      setRooms(departmentalRooms);
+      setTotalItems(departmentalRooms.length);
+    } else if (currentView === 'all' && allRooms.length > 0) {
+      setRooms(allRooms);
+      setTotalItems(allRooms.length);
     }
   }, [currentView, departmentalRooms, allRooms]);
 
@@ -167,16 +218,19 @@ function RoomManagement() {
     try {
       setError("");
       setMessage("");
+      setModalError("");
 
       if (!newRoom.building_id || !newRoom.room_number || !newRoom.capacity) {
-        setError("Building, room number, and capacity are required");
+        setModalError("Building, room number, and capacity are required");
         return;
       }
 
       await axios.post("/rooms", newRoom, { withCredentials: true });
       setMessage(`Room ${newRoom.room_number} added successfully!`);
 
+      // Reset modal and close it
       setShowAddModal(false);
+      setModalError("");
       setNewRoom({
         building_id: "",
         room_number: "",
@@ -191,7 +245,8 @@ function RoomManagement() {
       });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add room");
+      setModalError(err.response?.data?.error || "Failed to add room");
+      // Keep modal open so user can fix the error
     }
   };
 
@@ -199,6 +254,7 @@ function RoomManagement() {
     try {
       setError("");
       setMessage("");
+      setModalError("");
 
       await axios.put(`/rooms/${editingRoom.id}`, {
         room_number: editingRoom.room_number,
@@ -214,10 +270,12 @@ function RoomManagement() {
 
       setMessage("Room updated successfully!");
       setShowEditModal(false);
+      setModalError("");
       setEditingRoom(null);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to update room");
+      setModalError(err.response?.data?.error || "Failed to update room");
+      // Keep modal open so user can fix the error
     }
   };
 
@@ -301,6 +359,7 @@ function RoomManagement() {
 
   const openEditModal = (room) => {
     setEditingRoom(room);
+    setModalError("");
     setShowEditModal(true);
   };
 
@@ -427,24 +486,30 @@ function RoomManagement() {
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setCurrentView("departmental")}
+              onClick={() => {
+                setCurrentView("departmental");
+                setCurrentPage(1); // Reset page when switching views
+              }}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 currentView === "departmental"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              🏢 My Departmental Rooms ({departmentalRooms.length})
+              🏢 My Departmental Rooms ({roomCounts.departmental})
             </button>
             <button
-              onClick={() => setCurrentView("all")}
+              onClick={() => {
+                setCurrentView("all");
+                setCurrentPage(1); // Reset page when switching views
+              }}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 currentView === "all"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              🏫 All University Rooms ({allRooms.length})
+              🏫 All Rooms ({roomCounts.total_university})
             </button>
           </nav>
         </div>
@@ -719,25 +784,39 @@ function RoomManagement() {
         )}
       </div>
 
-      {/* Pagination - Simple pagination for current view */}
-      {Math.ceil(filteredRooms.length / perPage) > 1 && (
-        <div className="mt-6 flex justify-center items-center space-x-4">
+      {/* Pagination - Backend-driven pagination for proper page counts */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-center items-center space-x-2">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-3 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50 text-xs"
+          >
+            🔙 First
+          </button>
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            className="px-3 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50 text-sm"
           >
             ← Previous
           </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {Math.ceil(filteredRooms.length / perPage)} ({filteredRooms.length} filtered rooms)
+          <span className="text-sm text-gray-600 px-2">
+            Page {currentPage} of {totalPages}
           </span>
           <button
-            onClick={() => setCurrentPage(Math.min(Math.ceil(filteredRooms.length / perPage), currentPage + 1))}
-            disabled={currentPage === Math.ceil(filteredRooms.length / perPage)}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50 text-sm"
           >
             Next →
+          </button>
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 disabled:opacity-50 text-xs"
+          >
+            Last 🔜
           </button>
         </div>
       )}
@@ -902,6 +981,12 @@ function RoomManagement() {
                 </div>
               </div>
             </div>
+
+            {modalError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{modalError}</p>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-3 mt-8">
               <button
@@ -1072,6 +1157,12 @@ function RoomManagement() {
                 </div>
               </div>
             </div>
+
+            {modalError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{modalError}</p>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-3 mt-8">
               <button

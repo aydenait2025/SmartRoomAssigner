@@ -1,12 +1,15 @@
-from .auth import bp as auth
-# Now that models are fixed, enable the other blueprints
-from .users import bp as users
-from .students import bp as students
-from .rooms import bp as rooms
-from .buildings import bp as buildings
-from .assignments import bp as assignments
-from .imports import bp as imports
-from .system import bp as system
-from .schedules import bp as schedules
-
-__all__ = ['auth', 'users', 'students', 'rooms', 'buildings', 'assignments', 'imports', 'system', 'schedules']
+from .auth import bp as auth_bp
+from .users import bp as users_bp
+from .buildings import bp as buildings_bp
+from .rooms import bp as rooms_bp
+from .courses import bp as courses_bp
+from .students import bp as students_bp
+from .assignments import bp as assignments_bp
+from .assignments import bp as assign_bp
+from .schedules import bp as schedules_bp
+from .system import bp as system_bp
+from .imports import bp as imports_bp
+from .notifications import bp as notifications_bp
+from .dashboard import bp as dashboard_bp
+from .algorithms import bp as algorithms_bp
+from .exams import bp as exams_bp

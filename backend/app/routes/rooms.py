@@ -238,6 +238,40 @@ def get_room_reservations():
     reservations = reservations_query.all()
     return jsonify({'reservations': [r.to_dict() for r in reservations]}), 200
 
+@bp.route('/rooms/counts', methods=['GET'])
+@login_required
+def get_room_counts():
+    """Get room counts for tab headers"""
+    department_id = request.args.get('department_id', type=int)
+    user = current_user
+
+    # Total university rooms (all active rooms)
+    total_university = Room.query.filter(
+        db.or_(Room.is_active.is_(None), Room.is_active == True),
+        db.or_(Room.is_bookable.is_(None), Room.is_bookable == True)
+    ).count()
+
+    # Departmental rooms (if user has department)
+    departmental_count = 0
+    if user and hasattr(user, 'department_id') and user.department_id:
+        # Find rooms with active reservations for this department
+        department_users_ids = db.session.query(User.id).filter(User.department_id == user.department_id).subquery()
+        reserved_room_ids = db.session.query(RoomReservation.room_id).filter(
+            RoomReservation.requested_by.in_(department_users_ids),
+            RoomReservation.reservation_status == 'approved'
+        ).distinct().subquery()
+
+        departmental_count = Room.query.filter(
+            Room.id.in_(reserved_room_ids),
+            db.or_(Room.is_active.is_(None), Room.is_active == True),
+            db.or_(Room.is_bookable.is_(None), Room.is_bookable == True)
+        ).count()
+
+    return jsonify({
+        'total_university': total_university,
+        'departmental': departmental_count
+    }), 200
+
 @bp.route('/room-reservations', methods=['POST'])
 @login_required
 def create_room_reservation():
