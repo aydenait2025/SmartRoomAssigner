@@ -54,17 +54,18 @@ def create_app(config_class=None):
     )
 
     # Register blueprints
-    from .routes import auth, users, students, rooms, buildings, assignments, imports, system, schedules, courses
-    app.register_blueprint(auth)
-    app.register_blueprint(users)
-    app.register_blueprint(students)
-    app.register_blueprint(rooms)
-    app.register_blueprint(buildings)
-    app.register_blueprint(assignments)
-    app.register_blueprint(imports)
+    from .routes import auth, users, students, rooms, buildings, assignments, imports, system, schedules, courses, dashboard_bp as dashboard
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(users.bp)
+    app.register_blueprint(students.bp)
+    app.register_blueprint(rooms.bp)
+    app.register_blueprint(buildings.bp)
+    app.register_blueprint(assignments.bp)
+    app.register_blueprint(imports.bp)
     app.register_blueprint(system)
     app.register_blueprint(schedules)
     app.register_blueprint(courses)
+    app.register_blueprint(dashboard)
 
     # Import and register commands
     from . import commands

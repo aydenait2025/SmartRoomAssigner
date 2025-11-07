@@ -1,0 +1,36 @@
+[flake8]
+max-line-length = 127
+max-complexity = 10
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .mypy_cache,
+    .tox,
+    venv,
+    .venv,
+    env,
+    .env,
+    node_modules,
+    build,
+    dist,
+    *.egg-info,
+    .vscode,
+    .idea,
+    migrations,
+    tests
+
+# Error codes to ignore
+ignore =
+    E203,  # whitespace before ':'
+    E266,  # too many leading '#' for block comment
+    E501,  # line too long (handled by black)
+    W503,  # line break before binary operator
+    W504,  # line break after binary operator
+
+# Error codes to show
+select = E9,F63,F7,F82
+
+per-file-ignores =
+    __init__.py:F401
+    tests/*:E501,W503
