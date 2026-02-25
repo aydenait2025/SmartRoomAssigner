@@ -1,7 +1,15 @@
 # Dependencies
 **/node_modules/
+/apps/**/venv
+/packages/**/venv
 /backend/venv
 /backend/__pycache__
+__pycache__/
+*.pyc
+*.pyo
+
+# pnpm
+.pnpm-debug.log*
 
 # Build artifacts
 /frontend/build
@@ -17,6 +25,7 @@ cookies/
 *cookies*.txt
 *cookie*.txt
 session.txt
+sessions/
 
 # Processing artifacts (can be regenerated)
 data/processed/

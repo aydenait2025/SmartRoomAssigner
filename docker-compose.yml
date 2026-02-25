@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   backend:
-    build: ./backend
+    build: ./apps/backend
     ports:
       - "5000:5000"
     environment:
@@ -11,19 +9,21 @@ services:
       FLASK_ENV: development
       DATABASE_URL: postgresql://neondb_owner:npg_9YDSdm4cfVvQ@ep-jolly-credit-ahjpey1h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       PYTHONPATH: /app
+
       # Add new data paths for configuration
       DATA_RAW_DIR: /app/data/raw
       DATA_PROCESSED_DIR: /app/data/processed
     volumes:
-      - ./backend:/app
+      - ./apps/backend:/app
       # Mount data directories for file operations if needed
       - ./data:/app/data:ro  # Read-only mount for data files
       - ./cookies:/app/cookies:ro  # Read-only mount for session files
+
     networks:
       - smartroomassign
 
   frontend:
-    build: ./frontend
+    build: ./apps/frontend
     ports:
       - "3000:3000"
     environment:
@@ -33,7 +33,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend:/app
+      - ./apps/frontend:/app
       - /app/node_modules
       # Exclude certain directories to improve performance
       - ./.vscode-cache:/app/.cache:rw
@@ -41,6 +41,8 @@ services:
     tty: true
     networks:
       - smartroomassign
+
+
 
   # Optional: Add a data preprocessing service
   # data-processor:

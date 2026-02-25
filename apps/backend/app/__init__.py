@@ -3,6 +3,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_login import LoginManager
+from flask_session import Session
 from authlib.integrations.flask_client import OAuth
 
 # Import configuration
@@ -36,6 +37,9 @@ def create_app(config_class=None):
         f"http://{os.getenv('SERVER_IP', 'localhost')}:3000"
     ])
 
+    # Initialize session management
+    Session(app)
+
     # Initialize OAuth
     oauth.init_app(app)
     oauth.register(
@@ -62,10 +66,10 @@ def create_app(config_class=None):
     app.register_blueprint(buildings.bp)
     app.register_blueprint(assignments.bp)
     app.register_blueprint(imports.bp)
-    app.register_blueprint(system)
-    app.register_blueprint(schedules)
-    app.register_blueprint(courses)
-    app.register_blueprint(dashboard)
+    app.register_blueprint(system.bp)
+    app.register_blueprint(schedules.bp)
+    app.register_blueprint(courses.bp)
+    app.register_blueprint(dashboard.bp)
 
     # Import and register commands
     from . import commands

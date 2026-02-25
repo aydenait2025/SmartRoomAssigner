@@ -6,8 +6,8 @@ load_dotenv()
 class Config:
     """Base configuration"""
     SECRET_KEY = os.getenv('SECRET_KEY', 'a_very_secret_key')
-    # PostgreSQL ONLY - hardcoded Neon database connection (no SQLite or environment variable fallback)
-    SQLALCHEMY_DATABASE_URI = 'postgresql://neondb_owner:npg_9YDSdm4cfVvQ@ep-jolly-credit-ahjpey1h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+    # PostgreSQL database connection from environment variable
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://neondb_owner:npg_9YDSdm4cfVvQ@ep-jolly-credit-ahjpey1h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Email configuration
@@ -23,6 +23,12 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
     MICROSOFT_CLIENT_ID = os.getenv('MICROSOFT_CLIENT_ID')
     MICROSOFT_CLIENT_SECRET = os.getenv('MICROSOFT_CLIENT_SECRET')
+
+    # Session configuration - using filesystem-based sessions
+    SESSION_TYPE = 'filesystem'
+    SESSION_FILE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sessions')
+    SESSION_PERMANENT = True
+    PERMANENT_SESSION_LIFETIME = 3600  # 1 hour
 
     # Application paths
     DATA_RAW_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'raw')

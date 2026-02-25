@@ -7,6 +7,7 @@ python-dotenv==1.0.0
 Flask-CORS==4.0.0
 Werkzeug==2.3.7
 Flask-Login==0.6.2
+Flask-Session==0.5.0  # Redis-backed session management
 # reportlab==4.0.7
 Flask-Mail==0.9.1
 Authlib==1.2.1
@@ -18,7 +19,7 @@ beautifulsoup4==4.12.2
 # Enterprise enhancements
 cryptography==41.0.4
 PyJWT==2.8.0  # For advanced session management
-redis==5.0.0  # Optional caching layer
+
 celery==5.3.4  # Background task processing
 
 # Data validation and monitoring
